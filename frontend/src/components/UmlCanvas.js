@@ -1,5 +1,6 @@
     import React, { useEffect, useState } from 'react';
     import { dia, shapes } from 'jointjs';
+    import './Style.css';
 
     const UmlCanvas = () => {
         const [graph, setGraph] = useState(null);
@@ -17,8 +18,8 @@
             const newPaper = new dia.Paper({
                 el: document.getElementById('canvas'),
                 model: newGraph,
-                width: 800,
-                height: 600,
+                width: 1040,
+                height: 700,
                 gridSize: 10,
             });
 
@@ -216,7 +217,9 @@
         };
         
             return (
-                <div className="container">
+                <>
+                <div className='form-container'>
+                <div className="cont">
                     <div className="input-group">
                         <input
                             type="text"
@@ -225,7 +228,7 @@
                             onChange={(e) => setClassName(e.target.value)}
                         />
                         <input
-                    type="      text"
+                         type="text"
                             placeholder="Attributes (comma-separated)"
                             value={attributes}
                             onChange={(e) => setAttributes(e.target.value)}
@@ -266,12 +269,13 @@
                         </select>
                         <button onClick={addRelationship}>Add Relationship</button>
                     </div>
-                    <button onClick={handleGenerateCode}>Generate Code</button>
-                    <div className="canvas-container">
+                </div>
+                <div className="canvas-container">
                         <div className="canvas-title">UML Diagram Canvas</div>
-                        <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+                        <div id="canvas"></div>
                     </div>
                 </div>
+                </>
             );
         };
         
