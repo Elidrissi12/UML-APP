@@ -249,7 +249,9 @@
         };
         
             return (
-                <div className="container">
+                <>
+                <div className='form-container'>
+                <div className="cont">
                     <div className="input-group">
                         <input
                             type="text"
@@ -258,7 +260,7 @@
                             onChange={(e) => setClassName(e.target.value)}
                         />
                         <input
-                    type="      text"
+                    type="text"
                             placeholder="Attributes (comma-separated)"
                             value={attributes}
                             onChange={(e) => setAttributes(e.target.value)}
@@ -300,11 +302,14 @@
                         <button onClick={addRelationship}>Add Relationship</button>
                     </div>
                     <button onClick={handleGenerateCode}>Generate Code</button>
+                    </div>
+                    
                     <div className="canvas-container">
                         <div className="canvas-title">UML Diagram Canvas</div>
                         <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
                     </div>
                 </div>
+                </>
             );
         };
         
