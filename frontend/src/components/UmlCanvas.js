@@ -11,6 +11,9 @@
         const [sourceClassId, setSourceClassId] = useState(null);
         const [targetClassId, setTargetClassId] = useState(null);
         const [relationshipType, setRelationshipType] = useState('Association');
+        const [sourceCardinality, setSourceCardinality] = useState('');
+        const [targetCardinality, setTargetCardinality] = useState('');
+        const [generatedCode, setGeneratedCode] = useState('');
 
         useEffect(() => {
             const newGraph = new dia.Graph();
@@ -61,7 +64,36 @@
                 link.source(sourceClass);
                 link.target(targetClass);
                 setLinkStyle(link);
-                link.addTo(graph);
+
+            // Set cardinalities as labels on each end of the link
+            link.appendLabel({
+                attrs: {
+                    text: {
+                        text: sourceCardinality || '1', // Source cardinality
+                        fill: 'black',
+                    },
+                },
+                position: {
+                    distance: 0.2, // Position of source cardinality
+                    offset: { x: -10, y: -10 },
+                },
+            });
+
+            link.appendLabel({
+                attrs: {
+                    text: {
+                        text: targetCardinality || '1', // Target cardinality
+                        fill: 'black',
+                    },
+                },
+                position: {
+                    distance: 0.8, // Position of target cardinality
+                    offset: { x: 10, y: 10 },
+                },
+            });
+
+            link.addTo(graph);
+        
             }
         };
 
@@ -215,65 +247,84 @@
             }
         };
         
-            return (
-                <div className="container">
-                    <div className="input-group">
-                        <input
-                            type="text"
-                            placeholder="Class Name"
-                            value={className}
-                            onChange={(e) => setClassName(e.target.value)}
-                        />
-                        <input
-                    type="      text"
-                            placeholder="Attributes (comma-separated)"
-                            value={attributes}
-                            onChange={(e) => setAttributes(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Methods (comma-separated)"
-                            value={methods}
-                            onChange={(e) => setMethods(e.target.value)}
-                        />
-                        <button onClick={addClass}>Add Class</button>
-                    </div>
-                    <div className="input-group">
-                        <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
-                            <option value="">Select Source Class</option>
-                            {classes.map(cls => (
-                                <option key={cls.id} value={cls.id}>
-                                    {cls.attributes.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setTargetClassId(e.target.value)} value={targetClassId}>
-                            <option value="">Select Target Class</option>
-                            {classes.map(cls => (
-                                <option key={cls.id} value={cls.id}>
-                                    {cls.attributes.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setRelationshipType(e.target.value)} value={relationshipType}>
-                            <option value="Association">Association</option>
-                            <option value="Inheritance">Inheritance</option>
-                            <option value="Composition">Composition</option>
-                            <option value="Aggregation">Aggregation</option>
-                            <option value="Dependency">Dependency</option>
-                            <option value="Realization">Realization</option>
-                            <option value="Directed Association">Directed Association</option>
-                        </select>
-                        <button onClick={addRelationship}>Add Relationship</button>
-                    </div>
-                    <button onClick={handleGenerateCode}>Generate Code</button>
-                    <div className="canvas-container">
-                        <div className="canvas-title">UML Diagram Canvas</div>
-                        <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
-                    </div>
+         return (
+            <div className="container">
+                {/* Class input fields */}
+                <div className="input-group">
+                    <input
+                        type="text"
+                        placeholder="Class Name"
+                        value={className}
+                        onChange={(e) => setClassName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Attributes (comma-separated)"
+                        value={attributes}
+                        onChange={(e) => setAttributes(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Methods (comma-separated)"
+                        value={methods}
+                        onChange={(e) => setMethods(e.target.value)}
+                    />
+                    <button onClick={addClass}>Add Class</button>
                 </div>
-            );
-        };
+    
+                {/* Relationship input fields with cardinalities */}
+                <div className="input-group">
+                    <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
+                        <option value="">Select Source Class</option>
+                        {classes.map(cls => (
+                            <option key={cls.id} value={cls.id}>
+                                {cls.attributes.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select onChange={(e) => setTargetClassId(e.target.value)} value={targetClassId}>
+                        <option value="">Select Target Class</option>
+                        {classes.map(cls => (
+                            <option key={cls.id} value={cls.id}>
+                                {cls.attributes.name}
+                            </option>
+                        ))}
+                    </select>
+    
+                    {/* Cardinality inputs */}
+                    <input
+                        type="text"
+                        placeholder="Source Cardinality"
+                        value={sourceCardinality}
+                        onChange={(e) => setSourceCardinality(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Target Cardinality"
+                        value={targetCardinality}
+                        onChange={(e) => setTargetCardinality(e.target.value)}
+                    />
+    
+                    <select onChange={(e) => setRelationshipType(e.target.value)} value={relationshipType}>
+                        <option value="Association">Association</option>
+                        <option value="Inheritance">Inheritance</option>
+                        <option value="Composition">Composition</option>
+                        <option value="Aggregation">Aggregation</option>
+                        <option value="Dependency">Dependency</option>
+                        <option value="Realization">Realization</option>
+                        <option value="Directed Association">Directed Association</option>
+                    </select>
+                    <button onClick={addRelationship}>Add Relationship</button>
+                </div>
+    
+                {/* Canvas for UML Diagram */}
+                <div className="canvas-container">
+                    <div className="canvas-title">UML Diagram Canvas</div>
+                    <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+                </div>
+            </div>
+        );
+    };
         
 
     export default UmlCanvas;
