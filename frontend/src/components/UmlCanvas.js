@@ -12,6 +12,9 @@
         const [sourceClassId, setSourceClassId] = useState(null);
         const [targetClassId, setTargetClassId] = useState(null);
         const [relationshipType, setRelationshipType] = useState('Association');
+        const [sourceCardinality, setSourceCardinality] = useState('');
+        const [targetCardinality, setTargetCardinality] = useState('');
+        const [generatedCode, setGeneratedCode] = useState('');
 
         useEffect(() => {
             const newGraph = new dia.Graph();
@@ -62,7 +65,36 @@
                 link.source(sourceClass);
                 link.target(targetClass);
                 setLinkStyle(link);
-                link.addTo(graph);
+
+            // Set cardinalities as labels on each end of the link
+            link.appendLabel({
+                attrs: {
+                    text: {
+                        text: sourceCardinality || '1', // Source cardinality
+                        fill: 'black',
+                    },
+                },
+                position: {
+                    distance: 0.2, // Position of source cardinality
+                    offset: { x: -10, y: -10 },
+                },
+            });
+
+            link.appendLabel({
+                attrs: {
+                    text: {
+                        text: targetCardinality || '1', // Target cardinality
+                        fill: 'black',
+                    },
+                },
+                position: {
+                    distance: 0.8, // Position of target cardinality
+                    offset: { x: 10, y: 10 },
+                },
+            });
+
+            link.addTo(graph);
+        
             }
         };
 
@@ -217,9 +249,7 @@
         };
         
             return (
-                <>
-                <div className='form-container'>
-                <div className="cont">
+                <div className="container">
                     <div className="input-group">
                         <input
                             type="text"
@@ -228,7 +258,7 @@
                             onChange={(e) => setClassName(e.target.value)}
                         />
                         <input
-                         type="text"
+                    type="      text"
                             placeholder="Attributes (comma-separated)"
                             value={attributes}
                             onChange={(e) => setAttributes(e.target.value)}
@@ -269,13 +299,12 @@
                         </select>
                         <button onClick={addRelationship}>Add Relationship</button>
                     </div>
-                </div>
-                <div className="canvas-container">
+                    <button onClick={handleGenerateCode}>Generate Code</button>
+                    <div className="canvas-container">
                         <div className="canvas-title">UML Diagram Canvas</div>
-                        <div id="canvas"></div>
+                        <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
                     </div>
                 </div>
-                </>
             );
         };
         
