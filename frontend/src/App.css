@@ -18,7 +18,18 @@ body {
   height: 40vmin;
   pointer-events: none;
 }
-
+.toolbar{
+  position: absolute;
+  padding: 10px;
+  left: 30%;
+  top: 0;
+}
+.umlCanvas{
+  position: absolute;
+  padding: 10px;
+  left: 10px;
+  top: 20%;
+}
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;

@@ -22,9 +22,12 @@ const App = () => {
 
   return (
     <div className="App">
-      
+      <div className='toolbar'>
       <Toolbar onGenerateCode={handleGenerateCode} />
+      </div>
+      <div className='umlCanvas'> 
       <UmlCanvas />
+      </div>
     </div>
   );
 };

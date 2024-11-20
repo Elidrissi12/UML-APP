@@ -1,5 +1,6 @@
-    import React, { useEffect, useState } from 'react';
-    import { dia, shapes } from 'jointjs';
+import React, { useEffect, useState } from 'react';
+import { dia, shapes } from 'jointjs';
+import './Style.css';
 
     const UmlCanvas = () => {
         const [graph, setGraph] = useState(null);
@@ -70,193 +71,193 @@
         };
         
 
-        const addRelationship = () => {
-            if (!sourceClassId || !targetClassId) {
-                return alert("Please select both source and target classes.");
-            }
-        
-            const sourceClass = graph.getCell(sourceClassId);
-            const targetClass = graph.getCell(targetClassId);
-        
-            if (sourceClass && targetClass) {
-                const link = new shapes.standard.Link();
-                link.source(sourceClass);
-                link.target(targetClass);
-                setLinkStyle(link);
+    const addRelationship = () => {
+        if (!sourceClassId || !targetClassId) {
+            return alert("Please select both source and target classes.");
+        }
+    
+        const sourceClass = graph.getCell(sourceClassId);
+        const targetClass = graph.getCell(targetClassId);
+    
+        if (sourceClass && targetClass) {
+            const link = new shapes.standard.Link();
+            link.source(sourceClass);
+            link.target(targetClass);
+            setLinkStyle(link);
 
-            // Set cardinalities as labels on each end of the link
-            link.appendLabel({
-                attrs: {
-                    text: {
-                        text: sourceCardinality || '1', // Source cardinality
-                        fill: 'black',
-                    },
+        // Set cardinalities as labels on each end of the link
+        link.appendLabel({
+            attrs: {
+                text: {
+                    text: sourceCardinality || '1', // Source cardinality
+                    fill: 'black',
                 },
-                position: {
-                    distance: 0.2, // Position of source cardinality
-                    offset: { x: -10, y: -10 },
-                },
-            });
+            },
+            position: {
+                distance: 0.2, // Position of source cardinality
+                offset: { x: -10, y: -10 },
+            },
+        });
 
-            link.appendLabel({
-                attrs: {
-                    text: {
-                        text: targetCardinality || '1', // Target cardinality
-                        fill: 'black',
-                    },
+        link.appendLabel({
+            attrs: {
+                text: {
+                    text: targetCardinality || '1', // Target cardinality
+                    fill: 'black',
                 },
-                position: {
-                    distance: 0.8, // Position of target cardinality
-                    offset: { x: 10, y: 10 },
-                },
-            });
+            },
+            position: {
+                distance: 0.8, // Position of target cardinality
+                offset: { x: 10, y: 10 },
+            },
+        });
 
-            link.addTo(graph);
-        
-            }
+        link.addTo(graph);
+    
+        }
+    };
+
+    const setLinkStyle = (link) => {
+        const commonStyles = {
+            stroke: 'black',
+            'stroke-width': 2,
         };
-
-        const setLinkStyle = (link) => {
-            const commonStyles = {
-                stroke: 'black',
-                'stroke-width': 2,
-            };
-            
-            switch (relationshipType) {
-                case 'Directed Association':
-                        link.attr({
-                            line: {
-                                stroke: '#000',                  // Solid black line for association
-                                'stroke-width': 2,               // Standard line width
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead shape for directed association
-                                    fill: '#000',                // Solid fill for the arrowhead
-                                    stroke: '#000',              // Black stroke color to match line color
-                                    'stroke-width': 2,           // Standard border width for the marker
-                                },
-                            },
-                        });
-                        break;
-                case 'Composition':
-                        link.attr({
-                            line: {
-                                stroke: '#4b0082', // Use a custom color for the line
-                                'stroke-width': 3, // Increase the width of the line
-                                'stroke-dasharray': '5, 5', // Dashed line for emphasis
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path
-                                    fill: '#4b0082', // Solid fill to match line color
-                                    stroke: '#4b0082',
-                                    'stroke-width': 2, // Border of the marker
-                                },
-                            },
-                        });
-                        
-                    
-                    
-                    break;
-                case 'Aggregation':
-                        link.attr({
-                            line: {
-                                stroke: '#00008b', // Set to a deep blue color for contrast
-                                'stroke-width': 2, // Slightly thinner line
-                                'stroke-dasharray': '3, 3', // Dashed line for visual distinction
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path for better visibility
-                                    fill: 'none', // No fill for a hollow effect
-                                    stroke: '#00008b', // Match stroke color with the line
-                                    'stroke-width': 2, // Border width for the marker
-                                },
-                            },
-                        });
-                        break;
-                case 'Dependency':
-                        link.attr({
-                            line: {
-                                stroke: '#00008b',               // Set to a deep blue color for contrast
-                                'stroke-width': 1.5,             // Thinner line for a lighter visual impact
-                                'stroke-dasharray': '3, 3',      // Dashed line to signify dependency
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead for dependency
-                                    fill: '#00008b',             // Fill to match the line color
-                                    stroke: '#00008b',           // Same color as the line
-                                    'stroke-width': 1.5,         // Consistent border width for the marker
-                                },
-                            },
-                        });
-                        break;
-                case 'Realization':
-                        link.attr({
-                            line: {
-                                stroke: '#00008b',               // Set to a deep blue color for contrast
-                                'stroke-width': 1.5,             // Thinner line for a lighter visual impact
-                                'stroke-dasharray': '5, 5',      // Dashed line to represent a realization
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for realization
-                                    fill: 'none',                // Hollow fill to indicate an interface implementation
-                                    stroke: '#00008b',           // Match stroke color with the line
-                                    'stroke-width': 1.5,         // Thin border for the arrow
-                                },
-                            },
-                        });
-                        break;
-                case 'Inheritance':
-                        link.attr({
-                            line: {
-                                stroke: '#000',                  // Solid black line for inheritance
-                                'stroke-width': 2,               // Standard width for a solid line
-                                'target-marker': {
-                                    type: 'path',
-                                    d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for inheritance
-                                    fill: 'none',                // No fill to make the triangle hollow
-                                    stroke: '#000',              // Black stroke color to match line color
-                                    'stroke-width': 2,           // Standard border width for the marker
-                                },
-                            },
-                        });                             
-                        break;
-                                    
-                        
-                    
-                case 'Association':
-                default:
+        
+        switch (relationshipType) {
+            case 'Directed Association':
                     link.attr({
                         line: {
-                            ...commonStyles,
-                            'target-marker': null,
+                            stroke: '#000',                  // Solid black line for association
+                            'stroke-width': 2,               // Standard line width
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead shape for directed association
+                                fill: '#000',                // Solid fill for the arrowhead
+                                stroke: '#000',              // Black stroke color to match line color
+                                'stroke-width': 2,           // Standard border width for the marker
+                            },
                         },
                     });
                     break;
-            }
+            case 'Composition':
+                    link.attr({
+                        line: {
+                            stroke: '#4b0082', // Use a custom color for the line
+                            'stroke-width': 3, // Increase the width of the line
+                            'stroke-dasharray': '5, 5', // Dashed line for emphasis
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path
+                                fill: '#4b0082', // Solid fill to match line color
+                                stroke: '#4b0082',
+                                'stroke-width': 2, // Border of the marker
+                            },
+                        },
+                    });
+                    
+                
+                
+                break;
+            case 'Aggregation':
+                    link.attr({
+                        line: {
+                            stroke: '#00008b', // Set to a deep blue color for contrast
+                            'stroke-width': 2, // Slightly thinner line
+                            'stroke-dasharray': '3, 3', // Dashed line for visual distinction
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path for better visibility
+                                fill: 'none', // No fill for a hollow effect
+                                stroke: '#00008b', // Match stroke color with the line
+                                'stroke-width': 2, // Border width for the marker
+                            },
+                        },
+                    });
+                    break;
+            case 'Dependency':
+                    link.attr({
+                        line: {
+                            stroke: '#00008b',               // Set to a deep blue color for contrast
+                            'stroke-width': 1.5,             // Thinner line for a lighter visual impact
+                            'stroke-dasharray': '3, 3',      // Dashed line to signify dependency
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead for dependency
+                                fill: '#00008b',             // Fill to match the line color
+                                stroke: '#00008b',           // Same color as the line
+                                'stroke-width': 1.5,         // Consistent border width for the marker
+                            },
+                        },
+                    });
+                    break;
+            case 'Realization':
+                    link.attr({
+                        line: {
+                            stroke: '#00008b',               // Set to a deep blue color for contrast
+                            'stroke-width': 1.5,             // Thinner line for a lighter visual impact
+                            'stroke-dasharray': '5, 5',      // Dashed line to represent a realization
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for realization
+                                fill: 'none',                // Hollow fill to indicate an interface implementation
+                                stroke: '#00008b',           // Match stroke color with the line
+                                'stroke-width': 1.5,         // Thin border for the arrow
+                            },
+                        },
+                    });
+                    break;
+            case 'Inheritance':
+                    link.attr({
+                        line: {
+                            stroke: '#000',                  // Solid black line for inheritance
+                            'stroke-width': 2,               // Standard width for a solid line
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for inheritance
+                                fill: 'none',                // No fill to make the triangle hollow
+                                stroke: '#000',              // Black stroke color to match line color
+                                'stroke-width': 2,           // Standard border width for the marker
+                            },
+                        },
+                    });                             
+                    break;
+                                
+                    
+                
+            case 'Association':
+            default:
+                link.attr({
+                    line: {
+                        ...commonStyles,
+                        'target-marker': null,
+                    },
+                });
+                break;
+        }
+    };
+
+    const handleGenerateCode = async () => {
+        const diagramData = {
+            classes: classes.map(cls => ({
+                name: cls.attributes.name,
+                attributes: cls.attributes.attributes,
+                methods: cls.attributes.methods,
+            })),
         };
 
-        const handleGenerateCode = async () => {
-            const diagramData = {
-                classes: classes.map(cls => ({
-                    name: cls.attributes.name,
-                    attributes: cls.attributes.attributes,
-                    methods: cls.attributes.methods,
-                })),
-            };
+        try {
+            const response = await fetch('http://localhost:5000/api/generateCode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    diagramData: diagramData,
+                    language: 'Java',
+                }),
+            });
 
-            try {
-                const response = await fetch('http://localhost:5000/api/generateCode', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        diagramData: diagramData,
-                        language: 'Java',
-                    }),
-                });
-
-                if (!response.ok) throw new Error('Failed to generate code');
+            if (!response.ok) throw new Error('Failed to generate code');
 
                 const result = await response.json();
                 alert(result.code);
@@ -376,4 +377,4 @@
     };
         
 
-    export default UmlCanvas;
+export default UmlCanvas;
