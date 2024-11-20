@@ -2,103 +2,74 @@ import React, { useEffect, useState } from 'react';
 import { dia, shapes } from 'jointjs';
 import './Style.css';
 
-const UmlCanvas = () => {
-    const [graph, setGraph] = useState(null);
-    const [paper, setPaper] = useState(null);
-    const [classes, setClasses] = useState([]);
-    const [className, setClassName] = useState('');
-    const [attributes, setAttributes] = useState('');
-    const [methods, setMethods] = useState('');
-    const [selectedClass, setSelectedClass] = useState(null);
-    const [sourceClassId, setSourceClassId] = useState(null);
-    const [targetClassId, setTargetClassId] = useState(null);
-    const [relationshipType, setRelationshipType] = useState('Association');
-    const [sourceCardinality, setSourceCardinality] = useState('');
-    const [targetCardinality, setTargetCardinality] = useState('');
-    const [showDialog, setShowDialog] = useState(false);
-    const [dialogAction, setDialogAction] = useState(null);
+    const UmlCanvas = () => {
+        const [graph, setGraph] = useState(null);
+        const [paper, setPaper] = useState(null);
+        const [classes, setClasses] = useState([]);
+        const [className, setClassName] = useState('');
+        const [attributes, setAttributes] = useState('');
+        const [methods, setMethods] = useState('');
+        const [sourceClassId, setSourceClassId] = useState(null);
+        const [targetClassId, setTargetClassId] = useState(null);
+        const [relationshipType, setRelationshipType] = useState('Association');
+        const [sourceCardinality, setSourceCardinality] = useState('');
+        const [targetCardinality, setTargetCardinality] = useState('');
+        const [generatedCode, setGeneratedCode] = useState('');
+        const [attributeName, setAttributeName] = useState('');
+        const [attributeType, setAttributeType] = useState('');
+        const [attributeList, setAttributeList] = useState([]);
 
-    useEffect(() => {
-        const newGraph = new dia.Graph();
-        const newPaper = new dia.Paper({
-            el: document.getElementById('canvas'),
-            model: newGraph,
-            width: 1040,
-            height: 700,
-            gridSize: 10,
-        });
-    
-        setGraph(newGraph);
-        setPaper(newPaper);
-    
-        let clickCount = 0;
-        let clickTimeout;
-    
-        // Event listener for cell clicks
-        newPaper.on('cell:pointerclick', (cellView) => {
-            const cell = cellView.model;
-    
-            // Ensure it's a uml.Class cell
-            if (cell instanceof shapes.uml.Class) {
-                clickCount += 1;
-    
-                // Set a timeout to reset the click count
-                if (clickTimeout) clearTimeout(clickTimeout);
-                clickTimeout = setTimeout(() => {
-                    clickCount = 0;
-                }, 300); // 300 ms delay to detect triple-click
-    
-                // Check for triple-click
-                if (clickCount === 2) {
-                    const currentName = cell.get('name') || '';
-                    const currentAttributes = cell.get('attributes').join(', ') || '';
-                    const currentMethods = cell.get('methods').join(', ') || '';
-    
-                    const newName = prompt("Edit Class Name", currentName);
-                    const newAttributes = prompt("Edit Attributes (comma-separated)", currentAttributes);
-                    const newMethods = prompt("Edit Methods (comma-separated)", currentMethods);
-    
-                    // Update the class if new values are provided
-                    if (newName !== null && newName !== '') {
-                        cell.set({
-                            name: newName,
-                            attributes: newAttributes.split(',').map(attr => attr.trim()),
-                            methods: newMethods.split(',').map(method => method.trim()),
-                        });
-    
-                        cellView.render(); // Update the visual representation
-                    }
-                    clickCount = 0;
-                } else if (clickCount === 3) {
-                    const confirmDelete = window.confirm("Are you sure you want to delete this class?");
-                    if (confirmDelete) {
-                        cell.remove(); // Delete the class cell on triple-click with confirmation
-                    }
-                    
-                }
+        
+        useEffect(() => {
+            const newGraph = new dia.Graph();
+            const newPaper = new dia.Paper({
+                el: document.getElementById('canvas'),
+                model: newGraph,
+                width: 800,
+                height: 600,
+                gridSize: 10,
+            });
+
+            setGraph(newGraph);
+            setPaper(newPaper);
+        }, []);
+
+        const addAttribute = () => {
+            if (!attributeName || !attributeType) {
+                alert("Both name and type are required for an attribute.");
+                return;
             }
-        });
-    }, []);    
-    const addClass = () => {
-        if (!className) return alert("Class name is required.");
+            setAttributeList(prev => [...prev, { name: attributeName, type: attributeType }]);
+            setAttributeName('');
+            setAttributeType('');
+        };
+        
 
-        const umlClass = new shapes.uml.Class({
-            position: { x: Math.random() * 600, y: Math.random() * 400 },
-            size: { width: 200, height: 100 },
-            name: className,
-            attributes: attributes.split(',').map(attr => attr.trim()).filter(attr => attr),
-            methods: methods.split(',').map(method => method.trim()).filter(method => method),
-        });
+        const addClass = () => {
+            if (!className) return alert("Class name is required.");
+        
+            const umlClass = new shapes.uml.Class({
+                position: { x: Math.random() * 600, y: Math.random() * 400 },
+                size: { width: 200, height: 100 },
+                name: className,
+                attributes: attributeList.map(attr => `${attr.name}: ${attr.type}`),
+                methods: methods.split(',').map(method => method.trim()).filter(method => method),
+            });
+        
+            graph.addCell(umlClass);
+            setClasses(prev => [...prev, umlClass]);
+            resetClassInputs();
+        };
+        
 
-        graph.addCell(umlClass);
-        setClasses(prev => [...prev, umlClass]);
-        resetClassInputs();
-    };
-    const resetClassInputs = () => {
-        setClassName('');
-        setAttributes('');
-        setMethods('');
-    };
+        const resetClassInputs = () => {
+            setClassName('');
+            setMethods('');
+            setAttributeList([]);
+            setAttributeName('');
+            setAttributeType('');
+        };
+        
 
     const addRelationship = () => {
         if (!sourceClassId || !targetClassId) {
@@ -288,94 +259,122 @@ const UmlCanvas = () => {
 
             if (!response.ok) throw new Error('Failed to generate code');
 
-            const result = await response.json();
-            alert(result.code);
-        } catch (error) {
-            console.error("Error generating code:", error);
-            alert("An error occurred while generating code.");
-        }
-    };
-    const updateClass = () => {
-        if (!selectedClass) return;
-        selectedClass.attr('label/text', className);
-        selectedClass.attr('attributes/text', attributes.split(',').map(attr => attr.trim()).filter(attr => attr));
-        selectedClass.attr('methods/text', methods.split(',').map(method => method.trim()).filter(method => method));
-        resetClassInputs();
-        setSelectedClass(null);
-    };
+                const result = await response.json();
+                alert(result.code);
+            } catch (error) {
+                console.error("Error generating code:", error);
+                alert("An error occurred while generating code.");
+            }
+        };
 
-    const deleteClass = () => {
-        if (selectedClass) {
-            graph.removeCells([selectedClass]);
-            setClasses(classes.filter(cls => cls.id !== selectedClass.id));
-            resetClassInputs();
-            setSelectedClass(null);
-        }
-    };
 
-    return (
-        <>
-                <div className='form-container'>
-                <div className="cont">
-                    <div className="input-group">
-                        <input
-                            type="text"
-                            placeholder="Class Name"
-                            value={className}
-                            onChange={(e) => setClassName(e.target.value)}
-                        />
-                        <input
-                    type="text"
-                            placeholder="Attributes (comma-separated)"
-                            value={attributes}
-                            onChange={(e) => setAttributes(e.target.value)}
-                        />
-                        <input
-                            type="text"
-                            placeholder="Methods (comma-separated)"
-                            value={methods}
-                            onChange={(e) => setMethods(e.target.value)}
-                        />
-                        <button onClick={addClass}>Add Class</button>
-                    </div>
-                    <div className="input-group">
-                        <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
-                            <option value="">Select Source Class</option>
-                            {classes.map(cls => (
-                                <option key={cls.id} value={cls.id}>
-                                    {cls.attributes.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setTargetClassId(e.target.value)} value={targetClassId}>
-                            <option value="">Select Target Class</option>
-                            {classes.map(cls => (
-                                <option key={cls.id} value={cls.id}>
-                                    {cls.attributes.name}
-                                </option>
-                            ))}
-                        </select>
-                        <select onChange={(e) => setRelationshipType(e.target.value)} value={relationshipType}>
-                            <option value="Association">Association</option>
-                            <option value="Inheritance">Inheritance</option>
-                            <option value="Composition">Composition</option>
-                            <option value="Aggregation">Aggregation</option>
-                            <option value="Dependency">Dependency</option>
-                            <option value="Realization">Realization</option>
-                            <option value="Directed Association">Directed Association</option>
-                        </select>
-                        <button onClick={addRelationship}>Add Relationship</button>
-                    </div>
-                    <button onClick={handleGenerateCode}>Generate Code</button>
-                    </div>
-                    
-                    <div className="canvas-container">
-                        <div className="canvas-title">UML Diagram Canvas</div>
-                        <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
-                    </div>
+        
+        
+         return (
+            
+            <div className="container">
+                {/* Class input fields */}
+                <div className="input-group">
+                    <input
+                        type="text"
+                        placeholder="Class Name"
+                        value={className}
+                        onChange={(e) => setClassName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Attributes (comma-separated)"
+                        value={attributes}
+                        onChange={(e) => setAttributes(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Methods (comma-separated)"
+                        value={methods}
+                        onChange={(e) => setMethods(e.target.value)}
+                    />
+                    <button onClick={addClass}>Add Class</button>
                 </div>
-                </>
-    );
-};
+
+                <div className="input-group">
+    <input
+        type="text"
+        placeholder="Attribute Name"
+        value={attributeName}
+        onChange={(e) => setAttributeName(e.target.value)}
+    />
+    <input
+        type="text"
+        placeholder="Attribute Type"
+        value={attributeType}
+        onChange={(e) => setAttributeType(e.target.value)}
+    />
+    <button onClick={addAttribute}>Add Attribute</button>
+</div>
+<div>
+    <ul>
+        {attributeList.map((attr, index) => (
+            <li key={index}>
+                {attr.name}: {attr.type}
+            </li>
+        ))}
+    </ul>
+</div>
+
+    
+                {/* Relationship input fields with cardinalities */}
+                <div className="input-group">
+                    <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
+                        <option value="">Select Source Class</option>
+                        {classes.map(cls => (
+                            <option key={cls.id} value={cls.id}>
+                                {cls.attributes.name}
+                            </option>
+                        ))}
+                    </select>
+                    <select onChange={(e) => setTargetClassId(e.target.value)} value={targetClassId}>
+                        <option value="">Select Target Class</option>
+                        {classes.map(cls => (
+                            <option key={cls.id} value={cls.id}>
+                                {cls.attributes.name}
+                            </option>
+                        ))}
+                    </select>
+    
+                    {/* Cardinality inputs */}
+                    <input
+                        type="text"
+                        placeholder="Source Cardinality"
+                        value={sourceCardinality}
+                        onChange={(e) => setSourceCardinality(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Target Cardinality"
+                        value={targetCardinality}
+                        onChange={(e) => setTargetCardinality(e.target.value)}
+                    />
+    
+                    <select onChange={(e) => setRelationshipType(e.target.value)} value={relationshipType}>
+                        <option value="Association">Association</option>
+                        <option value="Inheritance">Inheritance</option>
+                        <option value="Composition">Composition</option>
+                        <option value="Aggregation">Aggregation</option>
+                        <option value="Dependency">Dependency</option>
+                        <option value="Realization">Realization</option>
+                        <option value="Directed Association">Directed Association</option>
+                    </select>
+                    <button onClick={addRelationship}>Add Relationship</button>
+                </div>
+    
+                {/* Canvas for UML Diagram */}
+                <div className="canvas-container">
+                    <div className="canvas-title">UML Diagram Canvas</div>
+                    <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+                </div>
+            </div>
+        );
+    };
+        
 
 export default UmlCanvas;
