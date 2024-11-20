@@ -1,4 +1,3 @@
-// frontend/src/components/Toolbar.js
 import React from 'react';
 
 const Toolbar = ({ onGenerateCode }) => {
