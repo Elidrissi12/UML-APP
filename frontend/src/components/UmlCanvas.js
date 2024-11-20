@@ -14,7 +14,11 @@
         const [sourceCardinality, setSourceCardinality] = useState('');
         const [targetCardinality, setTargetCardinality] = useState('');
         const [generatedCode, setGeneratedCode] = useState('');
+        const [attributeName, setAttributeName] = useState('');
+        const [attributeType, setAttributeType] = useState('');
+        const [attributeList, setAttributeList] = useState([]);
 
+        
         useEffect(() => {
             const newGraph = new dia.Graph();
             const newPaper = new dia.Paper({
@@ -29,27 +33,42 @@
             setPaper(newPaper);
         }, []);
 
+        const addAttribute = () => {
+            if (!attributeName || !attributeType) {
+                alert("Both name and type are required for an attribute.");
+                return;
+            }
+            setAttributeList(prev => [...prev, { name: attributeName, type: attributeType }]);
+            setAttributeName('');
+            setAttributeType('');
+        };
+        
+
         const addClass = () => {
             if (!className) return alert("Class name is required.");
-
+        
             const umlClass = new shapes.uml.Class({
                 position: { x: Math.random() * 600, y: Math.random() * 400 },
                 size: { width: 200, height: 100 },
                 name: className,
-                attributes: attributes.split(',').map(attr => attr.trim()).filter(attr => attr),
+                attributes: attributeList.map(attr => `${attr.name}: ${attr.type}`),
                 methods: methods.split(',').map(method => method.trim()).filter(method => method),
             });
-
+        
             graph.addCell(umlClass);
             setClasses(prev => [...prev, umlClass]);
             resetClassInputs();
         };
+        
 
         const resetClassInputs = () => {
             setClassName('');
-            setAttributes('');
             setMethods('');
+            setAttributeList([]);
+            setAttributeName('');
+            setAttributeType('');
         };
+        
 
         const addRelationship = () => {
             if (!sourceClassId || !targetClassId) {
@@ -246,8 +265,12 @@
                 alert("An error occurred while generating code.");
             }
         };
+
+
+        
         
          return (
+            
             <div className="container">
                 {/* Class input fields */}
                 <div className="input-group">
@@ -271,6 +294,32 @@
                     />
                     <button onClick={addClass}>Add Class</button>
                 </div>
+
+                <div className="input-group">
+    <input
+        type="text"
+        placeholder="Attribute Name"
+        value={attributeName}
+        onChange={(e) => setAttributeName(e.target.value)}
+    />
+    <input
+        type="text"
+        placeholder="Attribute Type"
+        value={attributeType}
+        onChange={(e) => setAttributeType(e.target.value)}
+    />
+    <button onClick={addAttribute}>Add Attribute</button>
+</div>
+<div>
+    <ul>
+        {attributeList.map((attr, index) => (
+            <li key={index}>
+                {attr.name}: {attr.type}
+            </li>
+        ))}
+    </ul>
+</div>
+
     
                 {/* Relationship input fields with cardinalities */}
                 <div className="input-group">
