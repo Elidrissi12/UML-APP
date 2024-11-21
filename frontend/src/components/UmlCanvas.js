@@ -271,9 +271,9 @@ import './Style.css';
         
         
          return (
-            
-            <div className="container">
-                {/* Class input fields */}
+            <>
+            <div className='form-container'>
+            <div className="cont">
                 <div className="input-group">
                     <input
                         type="text"
@@ -297,32 +297,29 @@ import './Style.css';
                 </div>
 
                 <div className="input-group">
-    <input
-        type="text"
-        placeholder="Attribute Name"
-        value={attributeName}
-        onChange={(e) => setAttributeName(e.target.value)}
-    />
-    <input
-        type="text"
-        placeholder="Attribute Type"
-        value={attributeType}
-        onChange={(e) => setAttributeType(e.target.value)}
-    />
-    <button onClick={addAttribute}>Add Attribute</button>
-</div>
-<div>
-    <ul>
-        {attributeList.map((attr, index) => (
-            <li key={index}>
-                {attr.name}: {attr.type}
-            </li>
-        ))}
-    </ul>
-</div>
-
-    
-                {/* Relationship input fields with cardinalities */}
+                    <input
+                        type="text"
+                        placeholder="Attribute Name"
+                        value={attributeName}
+                        onChange={(e) => setAttributeName(e.target.value)}
+                    />
+                    <input
+                        type="text"
+                        placeholder="Attribute Type"
+                        value={attributeType}
+                        onChange={(e) => setAttributeType(e.target.value)}
+                    />
+                    <button onClick={addAttribute}>Add Attribute</button>
+                </div>
+                <div>
+                    <ul>
+                        {attributeList.map((attr, index) => (
+                            <li key={index}>
+                                {attr.name}: {attr.type}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
                 <div className="input-group">
                     <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
                         <option value="">Select Source Class</option>
@@ -340,8 +337,6 @@ import './Style.css';
                             </option>
                         ))}
                     </select>
-    
-                    {/* Cardinality inputs */}
                     <input
                         type="text"
                         placeholder="Source Cardinality"
@@ -367,12 +362,14 @@ import './Style.css';
                     <button onClick={addRelationship}>Add Relationship</button>
                 </div>
     
-                {/* Canvas for UML Diagram */}
-                <div className="canvas-container">
-                    <div className="canvas-title">UML Diagram Canvas</div>
-                    <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+                
                 </div>
             </div>
+            <div className="canvas-container">
+            <div className="canvas-title">UML Diagram Canvas</div>
+            <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+        </div>
+        </>
         );
     };
         
