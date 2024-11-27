@@ -1,7 +1,7 @@
 /* Global Styles */
 body {
   font-family: Arial, sans-serif;
-  background-color: #c9c9ca;
+  background-color: #8b8c8d;
   margin: 0;
   padding: 0;
   display: flex;
@@ -13,7 +13,16 @@ body {
 .App {
   text-align: center;
 }
-
+.toolbarContainer{
+  position: absolute;
+  top: 5px;
+  left: 25%;
+  display: flex;
+  padding: 10px;
+  background-color: #f4f4f4;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
 .App-logo {
   height: 40vmin;
   pointer-events: none;

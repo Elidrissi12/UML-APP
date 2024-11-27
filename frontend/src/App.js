@@ -1,38 +1,24 @@
 import logo from './logo.svg';
 import './App.css';
-import React from 'react';
-import axios from 'axios';
+import './components/Style.css';
+import React, { useState } from 'react';
 import UmlCanvas from './components/UmlCanvas';
 import Toolbar from './components/Toolbar';
 
 const App = () => {
-  // Function to handle code generation
-  const handleGenerateCode = async (language) => {
-    const diagramData = {}; // Collect data from JointJS graph
-    try {
-      const response = await axios.post('http://localhost:5000/api/generateCode', {
-        diagramData,
-        language,
-      });
-      console.log('Generated Code:', response.data.code);
-    } catch (error) {
-      console.error('Error generating code:', error);
-    }
-  };
+  const [attributeList, setAttributeList] = useState([]);
+  const [methodList, setMethodList] = useState([]);
 
   return (
     <div className="App">
-      <div className='toolbar'>
+      <div className='toolbarContainer'>
+        <Toolbar attributeList={attributeList} methodList={methodList} />
       </div>
-      <div className='umlCanvas'> 
-      <UmlCanvas />
-      </div>
-      <div>
-      <Toolbar onGenerateCode={handleGenerateCode} />
+      <div className='umlCanvas'>
+        <UmlCanvas attributeList={attributeList} methodList={methodList} />
       </div>
     </div>
   );
 };
-
 
 export default App;

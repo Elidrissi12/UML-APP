@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { dia, shapes } from 'jointjs';
 import './Style.css';
-
     const UmlCanvas = () => {
         const [selectedClass, setSelectedClass] = useState(null); // For editing/deleting
         const [graph, setGraph] = useState(null);
@@ -26,15 +25,12 @@ import './Style.css';
         const [methodType, setMethodType] = useState('');
         const [methodList, setMethodList] = useState([]);
         const [showPopup, setShowPopup] = useState(false);
-
         const [popupMode, setPopupMode] = useState('');
-        
+        const [showDeletePopup, setShowDeletePopup] = useState(false);
+        const [selectedClassToDelete, setSelectedClassToDelete] = useState(null);
         useEffect(() => {
-            // Initialize the graph
             const newGraph = new dia.Graph();
             setGraph(newGraph);
-    
-            // Initialize the paper
             const newPaper = new dia.Paper({
                 el: document.getElementById('canvas'),
                 model: newGraph,
@@ -43,15 +39,12 @@ import './Style.css';
                 gridSize: 1,
                 interactive: true,
             });
-    
-            // Set the paper instance
             setPaper(newPaper);
-                
                 newPaper.on('cell:pointerdblclick', (cellView) => {
                     const cell = cellView.model;
                     if (cell.isElement()) {
                         setSelectedClass(cell);
-                        setClassName(cell.get('name') || ''); // Ensure fallback to empty string
+                        setClassName(cell.get('name') || '');
                         setAttributeList(
                             (cell.get('attributes') || []).map(attr => {
                                 const [name, type] = attr.split(': ');
@@ -64,14 +57,11 @@ import './Style.css';
                                 return { name, type };
                             })
                         );
-
-                        setPopupMode('edit'); // Ensure popup mode is set to edit
+                        setPopupMode('edit');
                         setShowPopup(true);
                     }
-
             });
         }, []);
-
         const addAttribute = () => {
             if (!attributeName || !attributeType) {
                 alert("Both name and type are required for an attribute.");
@@ -138,13 +128,6 @@ import './Style.css';
             resetClassInputs(false);
         };
         }
-        const deleteClass = () => {
-            if (selectedClass) {
-                graph.removeCells([selectedClass]);
-                setClasses(classes.filter(cls => cls.id !== selectedClass.id));
-            }
-            setShowPopup(false);
-        };
         const updateAttribute = (index, key, value) => {
             const updatedAttributes = [...attributeList];
             updatedAttributes[index][key] = value;
@@ -160,8 +143,37 @@ import './Style.css';
     
         const handlePopupClose = () => {
             setShowPopup(false);
+            resetClassInputs(false);
         };
-    const addRelationship = () => {
+        const handleDeleteClick = (classToDelete) => {
+            setSelectedClassToDelete(classToDelete);
+            setShowDeletePopup(true); // Show the confirmation popup
+        };
+    
+        const confirmDelete = () => {
+            if (selectedClassToDelete) {
+                // Perform the delete action
+                graph.removeCells([selectedClassToDelete]);
+            }
+            setShowDeletePopup(false);
+            setShowPopup(false);
+            resetClassInputs(false);
+            setSelectedClassToDelete(null);
+        };
+    
+        const cancelDelete = () => {
+            setShowDeletePopup(false); // Close the popup without deleting
+            setSelectedClassToDelete(null);
+        };
+        const deleteAttribute = (index) => {
+            setAttributeList((prev) => prev.filter((_, i) => i !== index));
+        };
+        
+        const deleteMethod = (index) => {
+            setMethodList((prev) => prev.filter((_, i) => i !== index));
+        };
+        
+        const addRelationship = () => {
         if (!sourceClassId || !targetClassId) {
             return alert("Please select both source and target classes.");
         }
@@ -174,17 +186,15 @@ import './Style.css';
             link.source(sourceClass);
             link.target(targetClass);
             setLinkStyle(link);
-
-        // Set cardinalities as labels on each end of the link
         link.appendLabel({
             attrs: {
                 text: {
-                    text: sourceCardinality || '1', // Source cardinality
+                    text: sourceCardinality || '1',
                     fill: 'black',
                 },
             },
             position: {
-                distance: 0.2, // Position of source cardinality
+                distance: 0.2,
                 offset: { x: -10, y: -10 },
             },
         });
@@ -192,12 +202,12 @@ import './Style.css';
         link.appendLabel({
             attrs: {
                 text: {
-                    text: targetCardinality || '1', // Target cardinality
+                    text: targetCardinality || '1',
                     fill: 'black',
                 },
             },
             position: {
-                distance: 0.8, // Position of target cardinality
+                distance: 0.8,
                 offset: { x: 10, y: 10 },
             },
         });
@@ -367,13 +377,10 @@ import './Style.css';
                         value={className}
                         onChange={(e) => setClassName(e.target.value)}
                     />
-                    
-                    
                     <button onClick={addClass}>Add Class</button>
                 </div>
 
                 <div className="input-group">
-                    {/* Attribute Inputs */}
                     <input
                         type="text"
                         placeholder="Attribute Name"
@@ -390,7 +397,6 @@ import './Style.css';
                         <option value="Boolean">Boolean</option>
                         <option value="double">double</option>
                         <option value="Date">Date</option>
-                        {/* Add more types as needed */}
                     </select>
                     <button onClick={addAttribute}>Add Attribute</button>
                 </div>
@@ -403,8 +409,6 @@ import './Style.css';
                         ))}
                     </ul>
                 </div>
-
-                {/* Method Inputs */}
                 <div className="input-group">
                     <input
                         type="text"
@@ -422,12 +426,9 @@ import './Style.css';
                         <option value="Boolean">boolean</option>
                         <option value="double">double</option>
                         <option value="void">void</option>
-                        {/* Add more return types as needed */}
                     </select>
                     <button onClick={addMethod}>Add Method</button>
                 </div>
-
-            {/* Display the list of methods */}
             <div>
                 <ul>
                     {methodList.map((method, index) => (
@@ -438,8 +439,6 @@ import './Style.css';
                 </ul>
             </div>
             </div>
-
-    
                 <div className='cont2'>
                 <div className="input-group">
                     <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
@@ -482,18 +481,33 @@ import './Style.css';
                     <button onClick={addRelationship}>Add Relationship</button>
                 
                 </div>
-    
-                
             </div>
-            
             <div className="canvas-container">
             <div className="canvas-title">UML Diagram Canvas</div>
             <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
         </div>
-        {/* Popup Modal */}
         {showPopup && (
                 <div className="popup">
                     <div className="popup-content">
+                    <button id="delete" onClick={() => handleDeleteClick(selectedClass)}>
+                    Delete
+                </button>
+                {showDeletePopup && (
+                <div className="popup">
+                    <div className="popup-content">
+                        <h3>Confirm Deletion</h3>
+                        <p>Are you sure you want to delete this class?</p>
+                        <div className="popup-footer">
+                            <button onClick={confirmDelete} className="confirm-button">
+                                Yes, Delete
+                            </button>
+                            <button onClick={cancelDelete} className="cancel-button">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
                         <h3>{popupMode === 'edit' ? 'Edit Class' : 'Delete Class'}</h3>
                         {popupMode === 'edit' ? (
                             <div>
@@ -504,9 +518,10 @@ import './Style.css';
                                     onChange={(e) => setClassName(e.target.value)}
                                 />
                                 <div>
-                                <h4>Attributes</h4>
+                                <hr></hr>
+                                    <h4>Attributes</h4>
                                     {attributeList.map((attr, index) => (
-                                        <div key={`attr-${index}`}>
+                                        <div key={`attr-${index}`} className="inputs">
                                             <input
                                                 type="text"
                                                 placeholder="Name"
@@ -524,14 +539,16 @@ import './Style.css';
                                                 <option value="double">double</option>
                                                 <option value="Date">Date</option>
                                             </select>
+                                            <button onClick={() => deleteAttribute(index)} id="delete-button">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                            </button>
                                         </div>
                                     ))}
-                                    <button onClick={addAttribute}>Add Attribute</button>
-                                </div>
                                 <div>
-                                <h4>Methods</h4>
+                                    <hr></hr>
+                                    <h4>Methods</h4>
                                     {methodList.map((method, index) => (
-                                        <div key={`method-${index}`}>
+                                        <div key={`method-${index}`} className="inputs">
                                             <input
                                                 type="text"
                                                 placeholder="Name"
@@ -551,22 +568,19 @@ import './Style.css';
                                                 <option value="double">double</option>
                                                 <option value="char">char</option>
                                             </select>
+                                            <button onClick={() => deleteMethod(index)} id="delete-button">
+                                            <ion-icon name="trash-outline"></ion-icon>
+                                            </button>
                                         </div>
                                     ))}
-
-
-                                    <button onClick={addMethod}>Add Method</button>
                                 </div>
-                                <button onClick={saveEdits}>Save</button>
+                                </div>
+                                <button onClick={saveEdits} id='save'>Save</button>
+                                <button onClick={handlePopupClose} id='close'>Close</button>
                             </div>
-                        ) : (
-                            <div>
-                                <p>Are you sure you want to delete this class?</p>
-                                <button onClick={deleteClass}>Yes</button>
-                                <button onClick={handlePopupClose}>No</button>
-                            </div>
+                        ):(
+                            <h1>Hello</h1>
                         )}
-                        <button onClick={handlePopupClose}>Close</button>
                     </div>
                 </div>
             )}
