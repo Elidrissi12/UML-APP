@@ -18,30 +18,6 @@ const Toolbar = ({ onGenerateCode }) => {
 };
 
 
-const styles = {
-  toolbarContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: '10px',
-    backgroundColor: '#f4f4f4',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-    borderRadius: '8px',
-  },
-  button: {
-    backgroundColor: '#007BFF',
-    color: 'white',
-    padding: '10px 20px',
-    margin: '0 5px',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    transition: 'background-color 0.3s ease',
-  },
-  buttonHover: {
-    backgroundColor: '#0056b3',
-  },
-};
+
 
 export default Toolbar;

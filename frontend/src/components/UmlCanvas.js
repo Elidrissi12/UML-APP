@@ -18,7 +18,9 @@ import './Style.css';
         const [attributeName, setAttributeName] = useState('');
         const [attributeType, setAttributeType] = useState('');
         const [attributeList, setAttributeList] = useState([]);
-
+        const [methodName, setMethodName] = useState('');
+        const [methodType, setMethodType] = useState('');
+        const [methodList, setMethodList] = useState([]);
         
         useEffect(() => {
             const newGraph = new dia.Graph();
@@ -43,6 +45,16 @@ import './Style.css';
             setAttributeName('');
             setAttributeType('');
         };
+
+        const addMethod = () => {
+            if (!methodName || !methodType) {
+                alert("Both name and type are required for a method.");
+                return;
+            }
+            setMethodList((prev) => [...prev, { name: methodName, type: methodType }]);
+            setMethodName('');
+            setMethodType('');
+        };
         
 
         const addClass = () => {
@@ -53,7 +65,7 @@ import './Style.css';
                 size: { width: 200, height: 100 },
                 name: className,
                 attributes: attributeList.map(attr => `${attr.name}: ${attr.type}`),
-                methods: methods.split(',').map(method => method.trim()).filter(method => method),
+                methods: methodList.map((method) => `${method.name}(): ${method.type}`),
             });
         
             graph.addCell(umlClass);
@@ -64,10 +76,12 @@ import './Style.css';
 
         const resetClassInputs = () => {
             setClassName('');
-            setMethods('');
+            setMethodList([]);
             setAttributeList([]);
             setAttributeName('');
             setAttributeType('');
+            setMethodName('');
+            setMethodType('');
         };
         
 
@@ -281,45 +295,67 @@ import './Style.css';
                         value={className}
                         onChange={(e) => setClassName(e.target.value)}
                     />
-                    <input
-                        type="text"
-                        placeholder="Attributes (comma-separated)"
-                        value={attributes}
-                        onChange={(e) => setAttributes(e.target.value)}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Methods (comma-separated)"
-                        value={methods}
-                        onChange={(e) => setMethods(e.target.value)}
-                    />
+                    
+                    
                     <button onClick={addClass}>Add Class</button>
                 </div>
 
                 <div className="input-group">
-                    <input
-                        type="text"
-                        placeholder="Attribute Name"
-                        value={attributeName}
-                        onChange={(e) => setAttributeName(e.target.value)}
-                    />
-                    <input
-                        type="text"
-                        placeholder="Attribute Type"
-                        value={attributeType}
-                        onChange={(e) => setAttributeType(e.target.value)}
-                    />
-                    <button onClick={addAttribute}>Add Attribute</button>
-                </div>
-                <div>
-                    <ul>
-                        {attributeList.map((attr, index) => (
-                            <li key={index}>
-                                {attr.name}: {attr.type}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+            <input
+        type="text"
+        placeholder="Attribute Name"
+        value={attributeName}
+        onChange={(e) => setAttributeName(e.target.value)}
+    />
+    <input
+        type="text"
+        placeholder="Attribute Type"
+        value={attributeType}
+        onChange={(e) => setAttributeType(e.target.value)}
+    />
+    <button onClick={addAttribute}>Add Attribute</button>
+</div>
+<div>
+    <ul>
+        {attributeList.map((attr, index) => (
+            <li key={index}>
+                {attr.name}: {attr.type}
+            </li>
+        ))}
+    </ul>
+</div>
+
+
+            {/* Method Inputs */}
+            <div className="input-group">
+                <input
+                    type="text"
+                    placeholder="Method Name"
+                    value={methodName}
+                    onChange={(e) => setMethodName(e.target.value)}
+                />
+                <input
+                    type="text"
+                    placeholder="Method Return Type"
+                    value={methodType}
+                    onChange={(e) => setMethodType(e.target.value)}
+                />
+                <button onClick={addMethod}>Add Method</button>
+            </div>
+
+            {/* Display the list of methods */}
+            <div>
+                <ul>
+                    {methodList.map((method, index) => (
+                        <li key={index}>
+                            {method.name}(): {method.type}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+    
+                {/* Relationship input fields with cardinalities */}
                 <div className="input-group">
                     <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
                         <option value="">Select Source Class</option>
