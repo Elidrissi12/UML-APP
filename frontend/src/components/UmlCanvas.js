@@ -3,12 +3,16 @@ import { dia, shapes } from 'jointjs';
 import './Style.css';
 
     const UmlCanvas = () => {
+        const [selectedClass, setSelectedClass] = useState(null); // For editing/deleting
         const [graph, setGraph] = useState(null);
         const [paper, setPaper] = useState(null);
         const [classes, setClasses] = useState([]);
         const [className, setClassName] = useState('');
         const [attributes, setAttributes] = useState('');
         const [methods, setMethods] = useState('');
+        const [isMenuVisible, setIsMenuVisible] = useState(false);
+        const [isEditFormVisible, setIsEditFormVisible] = useState(false);
+        const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] = useState(false);
         const [sourceClassId, setSourceClassId] = useState(null);
         const [targetClassId, setTargetClassId] = useState(null);
         const [relationshipType, setRelationshipType] = useState('Association');
@@ -21,19 +25,51 @@ import './Style.css';
         const [methodName, setMethodName] = useState('');
         const [methodType, setMethodType] = useState('');
         const [methodList, setMethodList] = useState([]);
+        const [showPopup, setShowPopup] = useState(false);
+
+        const [popupMode, setPopupMode] = useState('');
         
         useEffect(() => {
+            // Initialize the graph
             const newGraph = new dia.Graph();
+            setGraph(newGraph);
+    
+            // Initialize the paper
             const newPaper = new dia.Paper({
                 el: document.getElementById('canvas'),
                 model: newGraph,
                 width: 800,
                 height: 600,
-                gridSize: 10,
+                gridSize: 1,
+                interactive: true,
             });
-
-            setGraph(newGraph);
+    
+            // Set the paper instance
             setPaper(newPaper);
+                
+                newPaper.on('cell:pointerdblclick', (cellView) => {
+                    const cell = cellView.model;
+                    if (cell.isElement()) {
+                        setSelectedClass(cell);
+                        setClassName(cell.get('name') || ''); // Ensure fallback to empty string
+                        setAttributeList(
+                            (cell.get('attributes') || []).map(attr => {
+                                const [name, type] = attr.split(': ');
+                                return { name, type };
+                            })
+                        );
+                        setMethodList(
+                            (cell.get('methods') || []).map(method => {
+                                const [name, type] = method.split('(): ');
+                                return { name, type };
+                            })
+                        );
+
+                        setPopupMode('edit'); // Ensure popup mode is set to edit
+                        setShowPopup(true);
+                    }
+
+            });
         }, []);
 
         const addAttribute = () => {
@@ -72,8 +108,6 @@ import './Style.css';
             setClasses(prev => [...prev, umlClass]);
             resetClassInputs();
         };
-        
-
         const resetClassInputs = () => {
             setClassName('');
             setMethodList([]);
@@ -83,8 +117,50 @@ import './Style.css';
             setMethodName('');
             setMethodType('');
         };
+        const saveEdits = () => {
+            if (selectedClass) {
+                // Update the attributes and methods of the selected class
+                selectedClass.set({
+                    name: className,
+                    attributes: attributeList.map((attr) => `${attr.name}: ${attr.type}`),
+                    methods: methodList.map((method) => `${method.name}(): ${method.type}`),
+                });
         
-
+                // Rerender the text in the element (if necessary)
+                const text = `
+                    <<${className}>>\n
+                    ${attributeList.map((attr) => `${attr.name}: ${attr.type}`).join('\n')}\n
+                    ${methodList.map((method) => `${method.name}(): ${method.type}`).join('\n')}
+                `;
+                selectedClass.attr('label/text', text);
+        
+            setShowPopup(false);
+            resetClassInputs(false);
+        };
+        }
+        const deleteClass = () => {
+            if (selectedClass) {
+                graph.removeCells([selectedClass]);
+                setClasses(classes.filter(cls => cls.id !== selectedClass.id));
+            }
+            setShowPopup(false);
+        };
+        const updateAttribute = (index, key, value) => {
+            const updatedAttributes = [...attributeList];
+            updatedAttributes[index][key] = value;
+            setAttributeList(updatedAttributes);
+        };
+        
+        const updateMethod = (index, key, value) => {
+            const updatedMethods = [...methodList];
+            updatedMethods[index][key] = value;
+            setMethodList(updatedMethods);
+        };
+        
+    
+        const handlePopupClose = () => {
+            setShowPopup(false);
+        };
     const addRelationship = () => {
         if (!sourceClassId || !targetClassId) {
             return alert("Please select both source and target classes.");
@@ -280,14 +356,10 @@ import './Style.css';
                 alert("An error occurred while generating code.");
             }
         };
-
-
-        
-        
          return (
             <>
             <div className='form-container'>
-            <div className="cont">
+            <div className="cont1">
                 <div className="input-group">
                     <input
                         type="text"
@@ -301,47 +373,59 @@ import './Style.css';
                 </div>
 
                 <div className="input-group">
-            <input
-        type="text"
-        placeholder="Attribute Name"
-        value={attributeName}
-        onChange={(e) => setAttributeName(e.target.value)}
-    />
-    <input
-        type="text"
-        placeholder="Attribute Type"
-        value={attributeType}
-        onChange={(e) => setAttributeType(e.target.value)}
-    />
-    <button onClick={addAttribute}>Add Attribute</button>
-</div>
-<div>
-    <ul>
-        {attributeList.map((attr, index) => (
-            <li key={index}>
-                {attr.name}: {attr.type}
-            </li>
-        ))}
-    </ul>
-</div>
+                    {/* Attribute Inputs */}
+                    <input
+                        type="text"
+                        placeholder="Attribute Name"
+                        value={attributeName}
+                        onChange={(e) => setAttributeName(e.target.value)}
+                    />
+                    <select
+                        value={attributeType}
+                        onChange={(e) => setAttributeType(e.target.value)}
+                    >
+                        <option value="" disabled>Select Attribute Type</option>
+                        <option value="String">String</option>
+                        <option value="int">int</option>
+                        <option value="Boolean">Boolean</option>
+                        <option value="double">double</option>
+                        <option value="Date">Date</option>
+                        {/* Add more types as needed */}
+                    </select>
+                    <button onClick={addAttribute}>Add Attribute</button>
+                </div>
+                <div>
+                    <ul>
+                        {attributeList.map((attr, index) => (
+                            <li key={index}>
+                                {attr.name}: {attr.type}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
 
-
-            {/* Method Inputs */}
-            <div className="input-group">
-                <input
-                    type="text"
-                    placeholder="Method Name"
-                    value={methodName}
-                    onChange={(e) => setMethodName(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Method Return Type"
-                    value={methodType}
-                    onChange={(e) => setMethodType(e.target.value)}
-                />
-                <button onClick={addMethod}>Add Method</button>
-            </div>
+                {/* Method Inputs */}
+                <div className="input-group">
+                    <input
+                        type="text"
+                        placeholder="Method Name"
+                        value={methodName}
+                        onChange={(e) => setMethodName(e.target.value)}
+                    />
+                    <select
+                        value={methodType}
+                        onChange={(e) => setMethodType(e.target.value)}
+                    >
+                        <option value="" disabled>Select Return Type</option>
+                        <option value="String">String</option>
+                        <option value="int">int</option>
+                        <option value="Boolean">boolean</option>
+                        <option value="double">double</option>
+                        <option value="void">void</option>
+                        {/* Add more return types as needed */}
+                    </select>
+                    <button onClick={addMethod}>Add Method</button>
+                </div>
 
             {/* Display the list of methods */}
             <div>
@@ -353,9 +437,10 @@ import './Style.css';
                     ))}
                 </ul>
             </div>
+            </div>
 
     
-                {/* Relationship input fields with cardinalities */}
+                <div className='cont2'>
                 <div className="input-group">
                     <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
                         <option value="">Select Source Class</option>
@@ -385,7 +470,6 @@ import './Style.css';
                         value={targetCardinality}
                         onChange={(e) => setTargetCardinality(e.target.value)}
                     />
-    
                     <select onChange={(e) => setRelationshipType(e.target.value)} value={relationshipType}>
                         <option value="Association">Association</option>
                         <option value="Inheritance">Inheritance</option>
@@ -396,14 +480,96 @@ import './Style.css';
                         <option value="Directed Association">Directed Association</option>
                     </select>
                     <button onClick={addRelationship}>Add Relationship</button>
+                
                 </div>
     
                 
-                </div>
             </div>
+            
             <div className="canvas-container">
             <div className="canvas-title">UML Diagram Canvas</div>
             <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+        </div>
+        {/* Popup Modal */}
+        {showPopup && (
+                <div className="popup">
+                    <div className="popup-content">
+                        <h3>{popupMode === 'edit' ? 'Edit Class' : 'Delete Class'}</h3>
+                        {popupMode === 'edit' ? (
+                            <div>
+                                <input
+                                    type="text"
+                                    placeholder="Class Name"
+                                    value={className}
+                                    onChange={(e) => setClassName(e.target.value)}
+                                />
+                                <div>
+                                <h4>Attributes</h4>
+                                    {attributeList.map((attr, index) => (
+                                        <div key={`attr-${index}`}>
+                                            <input
+                                                type="text"
+                                                placeholder="Name"
+                                                value={attr.name}
+                                                onChange={(e) => updateAttribute(index, 'name', e.target.value)}
+                                            />
+                                            <select
+                                                value={attr.type}
+                                                onChange={(e) => updateAttribute(index, 'type', e.target.value)}
+                                            >
+                                                <option value="">-- Select Type --</option>
+                                                <option value="String">String</option>
+                                                <option value="int">int</option>
+                                                <option value="Boolean">Boolean</option>
+                                                <option value="double">double</option>
+                                                <option value="Date">Date</option>
+                                            </select>
+                                        </div>
+                                    ))}
+                                    <button onClick={addAttribute}>Add Attribute</button>
+                                </div>
+                                <div>
+                                <h4>Methods</h4>
+                                    {methodList.map((method, index) => (
+                                        <div key={`method-${index}`}>
+                                            <input
+                                                type="text"
+                                                placeholder="Name"
+                                                value={method.name}
+                                                onChange={(e) => updateMethod(index, 'name', e.target.value)}
+                                            />
+                                            <select
+                                                value={method.type}
+                                                onChange={(e) => updateMethod(index, 'type', e.target.value)}
+                                            >
+                                                <option value="">-- Select Return Type --</option>
+                                                <option value="void">void</option>
+                                                <option value="int">int</option>
+                                                <option value="string">string</option>
+                                                <option value="boolean">boolean</option>
+                                                <option value="float">float</option>
+                                                <option value="double">double</option>
+                                                <option value="char">char</option>
+                                            </select>
+                                        </div>
+                                    ))}
+
+
+                                    <button onClick={addMethod}>Add Method</button>
+                                </div>
+                                <button onClick={saveEdits}>Save</button>
+                            </div>
+                        ) : (
+                            <div>
+                                <p>Are you sure you want to delete this class?</p>
+                                <button onClick={deleteClass}>Yes</button>
+                                <button onClick={handlePopupClose}>No</button>
+                            </div>
+                        )}
+                        <button onClick={handlePopupClose}>Close</button>
+                    </div>
+                </div>
+            )}
         </div>
         </>
         );

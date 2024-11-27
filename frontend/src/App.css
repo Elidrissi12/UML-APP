@@ -1,7 +1,7 @@
 /* Global Styles */
 body {
   font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
+  background-color: #c9c9ca;
   margin: 0;
   padding: 0;
   display: flex;
@@ -17,18 +17,6 @@ body {
 .App-logo {
   height: 40vmin;
   pointer-events: none;
-}
-.toolbar{
-  position: absolute;
-  padding: 10px;
-  left: 30%;
-  top: 0;
-}
-.umlCanvas{
-  position: absolute;
-  padding: 10px;
-  left: 10px;
-  top: 20%;
 }
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {

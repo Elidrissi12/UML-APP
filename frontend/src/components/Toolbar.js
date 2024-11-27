@@ -3,14 +3,14 @@ import React from 'react';
 
 const Toolbar = ({ onGenerateCode }) => {
   return (
-    <div style={styles.toolbarContainer}>
-      <button style={styles.button} onClick={() => onGenerateCode('Java')}>
+    <div className='toolbarContainer'>
+      <button className='toolBtn' onClick={() => onGenerateCode('Java')}>
         Generate Java Code
       </button>
-      <button style={styles.button} onClick={() => onGenerateCode('PHP')}>
+      <button className='toolBtn' onClick={() => onGenerateCode('PHP')}>
         Generate PHP Code
       </button>
-      <button style={styles.button} onClick={() => onGenerateCode('Python')}>
+      <button className='toolBtn' onClick={() => onGenerateCode('Python')}>
         Generate Python Code
       </button>
     </div>
