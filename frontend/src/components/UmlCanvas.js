@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { dia, shapes } from 'jointjs';
+import {dia, shapes } from 'jointjs';
 import './Style.css';
     const UmlCanvas = () => {
         const [selectedClass, setSelectedClass] = useState(null); // For editing/deleting
@@ -7,17 +7,11 @@ import './Style.css';
         const [paper, setPaper] = useState(null);
         const [classes, setClasses] = useState([]);
         const [className, setClassName] = useState('');
-        const [attributes, setAttributes] = useState('');
-        const [methods, setMethods] = useState('');
-        const [isMenuVisible, setIsMenuVisible] = useState(false);
-        const [isEditFormVisible, setIsEditFormVisible] = useState(false);
-        const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] = useState(false);
         const [sourceClassId, setSourceClassId] = useState(null);
         const [targetClassId, setTargetClassId] = useState(null);
         const [relationshipType, setRelationshipType] = useState('Association');
         const [sourceCardinality, setSourceCardinality] = useState('');
         const [targetCardinality, setTargetCardinality] = useState('');
-        const [generatedCode, setGeneratedCode] = useState('');
         const [attributeName, setAttributeName] = useState('');
         const [attributeType, setAttributeType] = useState('');
         const [attributeList, setAttributeList] = useState([]);
@@ -28,9 +22,12 @@ import './Style.css';
         const [popupMode, setPopupMode] = useState('');
         const [showDeletePopup, setShowDeletePopup] = useState(false);
         const [selectedClassToDelete, setSelectedClassToDelete] = useState(null);
+        const [generatedCode, setGeneratedCode] = useState('');
+        const [showPopup1, setShowPopup1] = useState(false);
         useEffect(() => {
             const newGraph = new dia.Graph();
             setGraph(newGraph);
+    
             const newPaper = new dia.Paper({
                 el: document.getElementById('canvas'),
                 model: newGraph,
@@ -40,28 +37,129 @@ import './Style.css';
                 interactive: true,
             });
             setPaper(newPaper);
-                newPaper.on('cell:pointerdblclick', (cellView) => {
-                    const cell = cellView.model;
-                    if (cell.isElement()) {
-                        setSelectedClass(cell);
-                        setClassName(cell.get('name') || '');
-                        setAttributeList(
-                            (cell.get('attributes') || []).map(attr => {
-                                const [name, type] = attr.split(': ');
-                                return { name, type };
-                            })
-                        );
-                        setMethodList(
-                            (cell.get('methods') || []).map(method => {
-                                const [name, type] = method.split('(): ');
-                                return { name, type };
-                            })
-                        );
-                        setPopupMode('edit');
-                        setShowPopup(true);
-                    }
+            newPaper.on('cell:pointerdblclick', (cellView) => {
+                const cell = cellView.model;
+                if (cell.isElement()) {
+                    setSelectedClass(cell);
+                    setClassName(cell.get('name') || '');
+    
+                    const attributes = (cell.get('attributes') || []).map(attr => {
+                        const [name, type] = attr.split(': ');
+                        return { name, type };
+                    });
+                    setAttributeList(attributes);
+    
+                    const methods = (cell.get('methods') || []).map(method => {
+                        const [name, type] = method.split('(): ');
+                        return { name, type };
+                    });
+                    setMethodList(methods);
+    
+                    setPopupMode('edit');
+                    // extractCanvasData(newPaper);
+                    setShowPopup(true);
+                }
             });
         }, []);
+        const fetchDataFromPaper = () => {
+            if (!paper) {
+              console.error('Paper is not initialized.');
+              return [];
+            }
+          
+            const graph = paper.model;
+            const elements = graph.getElements();
+          
+            const classes = elements.map((element) => {
+              const className = element.get('name') || 'UnnamedClass';
+              const attrs = element.get('attributes') || [];
+              const meths = element.get('methods') || [];
+          
+              const attributes = attrs.map((attr) => {
+                if (typeof attr === 'string') {
+                  const [name, type] = attr.split(': ').map((v) => v.trim());
+                  return { name: name || 'UnnamedAttribute', type: type || 'Object' };
+                } else if (typeof attr === 'object') {
+                  return { name: attr.name || 'UnnamedAttribute', type: attr.type || 'Object' };
+                }
+                return { name: 'UnnamedAttribute', type: 'Object' };
+              });
+          
+              const methods = meths.map((method) => {
+                if (typeof method === 'string') {
+                  const [name, type] = method.split('(): ').map((v) => v.trim());
+                  return { name: name || 'UnnamedMethod', type: type || 'void' };
+                } else if (typeof method === 'object') {
+                  return { name: method.name || 'UnnamedMethod', type: method.type || 'void' };
+                }
+                return { name: 'UnnamedMethod', type: 'void' };
+              });
+          
+              return { className, attributes, methods };
+            });
+          
+            return classes;
+          };
+          
+          
+          
+          const onGenerateCode = (language) => {
+            const classes = fetchDataFromPaper();
+          
+            if (!classes.length) {
+              alert('No classes found to generate code.');
+              return;
+            }
+          
+            let code = '';
+          
+            classes.forEach(({ className, attributes, methods }) => {
+              if (language === 'Java') {
+                code += `public class ${className} {\n`;
+                attributes.forEach((attr) => {
+                  code += `    private ${attr.type} ${attr.name};\n`;
+                });
+                code += '\n';
+                methods.forEach((method) => {
+                  code += `    public ${method.type} ${method.name}() {\n        // TODO: Implement\n    }\n`;
+                });
+                code += '}\n\n';
+              } else if (language === 'PHP') {
+                code += `<?php\n\nclass ${className} {\n`;
+                attributes.forEach((attr) => {
+                  code += `    private $${attr.name}; // Type: ${attr.type}\n`;
+                });
+                code += '\n';
+                methods.forEach((method) => {
+                  code += `    public function ${method.name}() {\n        // TODO: Implement\n    }\n`;
+                });
+                code += '}\n\n';
+              } else if (language === 'Python') {
+                code += `class ${className}:\n`;
+                code += '    def __init__(self):\n';
+                attributes.forEach((attr) => {
+                  code += `        self.${attr.name} = None  # Type: ${attr.type}\n`;
+                });
+                code += '\n';
+                methods.forEach((method) => {
+                  code += `    def ${method.name}(self):\n        # TODO: Implement\n        pass\n`;
+                });
+                code += '\n\n';
+              }
+            });
+          
+            setGeneratedCode(code.trim());
+            setShowPopup1(true);
+          };
+          
+          
+          
+        
+          // Close the popup
+          const closePopup = () => {
+            setShowPopup1(false);
+            setGeneratedCode('');
+          };
         const addAttribute = () => {
             if (!attributeName || !attributeType) {
                 alert("Both name and type are required for an attribute.");
@@ -71,6 +169,7 @@ import './Style.css';
             setAttributeName('');
             setAttributeType('');
         };
+        
 
         const addMethod = () => {
             if (!methodName || !methodType) {
@@ -80,7 +179,7 @@ import './Style.css';
             setMethodList((prev) => [...prev, { name: methodName, type: methodType }]);
             setMethodName('');
             setMethodType('');
-        };
+        };        
         
 
         const addClass = () => {
@@ -97,7 +196,8 @@ import './Style.css';
             graph.addCell(umlClass);
             setClasses(prev => [...prev, umlClass]);
             resetClassInputs();
-        };
+        };        
+    
         const resetClassInputs = () => {
             setClassName('');
             setMethodList([]);
@@ -174,50 +274,54 @@ import './Style.css';
         };
         
         const addRelationship = () => {
-        if (!sourceClassId || !targetClassId) {
-            return alert("Please select both source and target classes.");
-        }
-    
-        const sourceClass = graph.getCell(sourceClassId);
-        const targetClass = graph.getCell(targetClassId);
-    
-        if (sourceClass && targetClass) {
-            const link = new shapes.standard.Link();
-            link.source(sourceClass);
-            link.target(targetClass);
-            setLinkStyle(link);
-        link.appendLabel({
-            attrs: {
-                text: {
-                    text: sourceCardinality || '1',
-                    fill: 'black',
-                },
-            },
-            position: {
-                distance: 0.2,
-                offset: { x: -10, y: -10 },
-            },
-        });
+            if (!sourceClassId || !targetClassId) {
+                return alert("Please select both source and target classes.");
+            }
+        
+            const sourceClass = graph.getCell(sourceClassId);
+            const targetClass = graph.getCell(targetClassId);
+        
+            if (sourceClass && targetClass) {
+                const link = new shapes.standard.Link();
+                link.source(sourceClass);
+                link.target(targetClass);
+        
+                // Set the style based on the relationship type
+                setLinkStyle(link, relationshipType);
+        
+                link.appendLabel({
+                    attrs: {
+                        text: {
+                            text: sourceCardinality || '1',
+                            fill: 'black',
+                        },
+                    },
+                    position: {
+                        distance: 0.2,
+                        offset: { x: -10, y: -10 },
+                    },
+                });
+        
+                link.appendLabel({
+                    attrs: {
+                        text: {
+                            text: targetCardinality || '1',
+                            fill: 'black',
+                        },
+                    },
+                    position: {
+                        distance: 0.8,
+                        offset: { x: 10, y: 10 },
+                    },
+                });
+        
+                link.addTo(graph);
+            }
+        };
+        
+        
 
-        link.appendLabel({
-            attrs: {
-                text: {
-                    text: targetCardinality || '1',
-                    fill: 'black',
-                },
-            },
-            position: {
-                distance: 0.8,
-                offset: { x: 10, y: 10 },
-            },
-        });
-
-        link.addTo(graph);
-    
-        }
-    };
-
-    const setLinkStyle = (link) => {
+       const setLinkStyle = (link) => {
         const commonStyles = {
             stroke: 'black',
             'stroke-width': 2,
@@ -335,39 +439,29 @@ import './Style.css';
                 break;
         }
     };
-
-    const handleGenerateCode = async () => {
-        const diagramData = {
-            classes: classes.map(cls => ({
-                name: cls.attributes.name,
-                attributes: cls.attributes.attributes,
-                methods: cls.attributes.methods,
-            })),
-        };
-
-        try {
-            const response = await fetch('http://localhost:5000/api/generateCode', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    diagramData: diagramData,
-                    language: 'Java',
-                }),
-            });
-
-            if (!response.ok) throw new Error('Failed to generate code');
-
-                const result = await response.json();
-                alert(result.code);
-            } catch (error) {
-                console.error("Error generating code:", error);
-                alert("An error occurred while generating code.");
-            }
-        };
          return (
             <>
+                <div className="toolbarContainer">
+                    <button className="toolBtn" onClick={() => onGenerateCode('Java')}>
+                        Generate Java Code
+                    </button>
+                    <button className="toolBtn" onClick={() => onGenerateCode('PHP')}>
+                        Generate PHP Code
+                    </button>
+                    <button className="toolBtn" onClick={() => onGenerateCode('Python')}>
+                        Generate Python Code
+                    </button>
+                    </div>
+                    {showPopup1 && (
+                        <div className="popup1">
+                            <div className="popup-content1">
+                                <h3>Generated Code</h3>
+                                <pre className="code-preview">{generatedCode}</pre>
+                                <button className="close-button" onClick={closePopup}>Close</button>
+                            </div>
+                        </div>
+                    )}
+
             <div className='form-container'>
             <div className="cont1">
                 <div className="input-group">
@@ -439,7 +533,7 @@ import './Style.css';
                 </ul>
             </div>
             </div>
-                <div className='cont2'>
+            <div className='cont2'>
                 <div className="input-group">
                     <select onChange={(e) => setSourceClassId(e.target.value)} value={sourceClassId}>
                         <option value="">Select Source Class</option>
@@ -484,7 +578,8 @@ import './Style.css';
             </div>
             <div className="canvas-container">
             <div className="canvas-title">UML Diagram Canvas</div>
-            <div id="canvas" style={{ height: '100%', width: '100%' }}></div>
+            <div id="canvas" style={{ height: '100%', width: '100%' }}>
+            </div>
         </div>
         {showPopup && (
                 <div className="popup">
@@ -559,14 +654,12 @@ import './Style.css';
                                                 value={method.type}
                                                 onChange={(e) => updateMethod(index, 'type', e.target.value)}
                                             >
-                                                <option value="">-- Select Return Type --</option>
-                                                <option value="void">void</option>
+                                                <option value="" disabled>Select Return Type</option>
+                                                <option value="String">String</option>
                                                 <option value="int">int</option>
-                                                <option value="string">string</option>
-                                                <option value="boolean">boolean</option>
-                                                <option value="float">float</option>
+                                                <option value="Boolean">boolean</option>
                                                 <option value="double">double</option>
-                                                <option value="char">char</option>
+                                                <option value="void">void</option>
                                             </select>
                                             <button onClick={() => deleteMethod(index)} id="delete-button">
                                             <ion-icon name="trash-outline"></ion-icon>
