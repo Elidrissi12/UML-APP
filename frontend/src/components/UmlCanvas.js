@@ -286,7 +286,7 @@ import './Style.css';
                 link.source(sourceClass);
                 link.target(targetClass);
         
-                // Set the style based on the relationship type
+                
                 setLinkStyle(link, relationshipType);
         
                 link.appendLabel({
@@ -441,7 +441,9 @@ import './Style.css';
     };
          return (
             <>
+            
                 <div className="toolbarContainer">
+                    
                     <button className="toolBtn" onClick={() => onGenerateCode('Java')}>
                         Generate Java Code
                     </button>
@@ -577,7 +579,8 @@ import './Style.css';
                 </div>
             </div>
             <div className="canvas-container">
-            <div className="canvas-title">UML Diagram Canvas</div>
+            <div className="canvas-title">EMSI UML Diagram </div>
+            <div className="canvas-title"></div>
             <div id="canvas" style={{ height: '100%', width: '100%' }}>
             </div>
         </div>
