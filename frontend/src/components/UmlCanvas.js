@@ -19,22 +19,30 @@ import './Style.css';
         const [methodType, setMethodType] = useState('');
         const [methodList, setMethodList] = useState([]);
         const [showPopup, setShowPopup] = useState(false);
+        const [showPopup2, setShowPopup2] = useState(false);
         const [popupMode, setPopupMode] = useState('');
         const [showDeletePopup, setShowDeletePopup] = useState(false);
         const [selectedClassToDelete, setSelectedClassToDelete] = useState(null);
         const [generatedCode, setGeneratedCode] = useState('');
         const [showPopup1, setShowPopup1] = useState(false);
+        const [relationships, setRelationships] = useState([]);
+        const [selectedRelationship, setSelectedRelationship] = useState(null);
+        const [classType, setClassType] = useState('');
         useEffect(() => {
             const newGraph = new dia.Graph();
             setGraph(newGraph);
-    
+
             const newPaper = new dia.Paper({
-                el: document.getElementById('canvas'),
-                model: newGraph,
-                width: 800,
-                height: 600,
-                gridSize: 1,
-                interactive: true,
+                el: document.getElementById('canvas'), // The canvas element where the graph is rendered
+                model: newGraph, // The graph model
+                width: 800, // Width of the paper
+                height: 600, // Height of the paper
+                gridSize: 20, // Distance between dots in the grid
+                drawGrid: {
+                    name: 'dot', // Use the 'dot' grid style
+                    args: { color: 'gray', thickness: 1 } // Customize the dots
+                },
+                interactive: true, // Allow interaction with the paper
             });
             setPaper(newPaper);
             newPaper.on('cell:pointerdblclick', (cellView) => {
@@ -42,7 +50,6 @@ import './Style.css';
                 if (cell.isElement()) {
                     setSelectedClass(cell);
                     setClassName(cell.get('name') || '');
-    
                     const attributes = (cell.get('attributes') || []).map(attr => {
                         const [name, type] = attr.split(': ');
                         return { name, type };
@@ -105,58 +112,64 @@ import './Style.css';
           
           const onGenerateCode = (language) => {
             const classes = fetchDataFromPaper();
-          
+        
             if (!classes.length) {
-              alert('No classes found to generate code.');
-              return;
+                alert('No classes found to generate code.');
+                return;
             }
-          
-            let code = '';
-          
-            classes.forEach(({ className, attributes, methods }) => {
-              if (language === 'Java') {
-                code += `public class ${className} {\n`;
-                attributes.forEach((attr) => {
-                  code += `    private ${attr.type} ${attr.name};\n`;
-                });
-                code += '\n';
-                methods.forEach((method) => {
-                  code += `    public ${method.type} ${method.name}() {\n        // TODO: Implement\n    }\n`;
-                });
-                code += '}\n\n';
-              } else if (language === 'PHP') {
-                code += `<?php\n\nclass ${className} {\n`;
-                attributes.forEach((attr) => {
-                  code += `    private $${attr.name}; // Type: ${attr.type}\n`;
-                });
-                code += '\n';
-                methods.forEach((method) => {
-                  code += `    public function ${method.name}() {\n        // TODO: Implement\n    }\n`;
-                });
-                code += '}\n\n';
-              } else if (language === 'Python') {
-                code += `class ${className}:\n`;
-                code += '    def __init__(self):\n';
-                attributes.forEach((attr) => {
-                  code += `        self.${attr.name} = None  # Type: ${attr.type}\n`;
-                });
-                code += '\n';
-                methods.forEach((method) => {
-                  code += `    def ${method.name}(self):\n        # TODO: Implement\n        pass\n`;
-                });
-                code += '\n\n';
-              }
+            const relationshipMap = {};
+            classes.forEach(({ className, relationships }) => {
+                if (relationships) {
+                    relationships.forEach((relation) => {
+                        if (relation.type === 'inheritance') {
+                            relationshipMap[relation.child] = relation.parent;
+                        }
+                    });
+                }
             });
-          
+        
+            let code = '';
+        
+            classes.forEach(({ className, attributes, methods }) => {
+                const inheritsFrom = relationshipMap[className];
+                const inherits = inheritsFrom ? (language === 'Python' ? `(${inheritsFrom})` : ` extends ${inheritsFrom}`) : '';
+                if (language === 'Java') {
+                    code += `public class ${className}${inherits} {\n`;
+                    attributes.forEach((attr) => {
+                        code += `    private ${attr.type} ${attr.name};\n`;
+                    });
+                    code += '\n';
+                    methods.forEach((method) => {
+                        code += `    public ${method.type} ${method.name}() {\n        // TODO: Implement\n    }\n`;
+                    });
+                    code += '}\n\n';
+                } else if (language === 'PHP') {
+                    code += `<?php\n\nclass ${className}${inherits ? ` extends ${inheritsFrom}` : ''} {\n`;
+                    attributes.forEach((attr) => {
+                        code += `    private $${attr.name}; // Type: ${attr.type}\n`;
+                    });
+                    code += '\n';
+                    methods.forEach((method) => {
+                        code += `    public function ${method.name}() {\n        // TODO: Implement\n    }\n`;
+                    });
+                    code += '}\n?>\n';
+                } else if (language === 'Python') {
+                    code += `class ${className}${inherits}:\n`;
+                    code += '    def __init__(self):\n';
+                    attributes.forEach((attr) => {
+                        code += `        self.${attr.name} = None  # Type: ${attr.type}\n`;
+                    });
+                    code += '\n';
+                    methods.forEach((method) => {
+                        code += `    def ${method.name}(self):\n        # TODO: Implement\n        pass\n`;
+                    });
+                    code += '\n\n';
+                }
+            });
             setGeneratedCode(code.trim());
             setShowPopup1(true);
-          };
-          
-          
-          
-        
-          // Close the popup
-          const closePopup = () => {
+        };
+        const closePopup = () => {
             setShowPopup1(false);
             setGeneratedCode('');
           };
@@ -169,8 +182,6 @@ import './Style.css';
             setAttributeName('');
             setAttributeType('');
         };
-        
-
         const addMethod = () => {
             if (!methodName || !methodType) {
                 alert("Both name and type are required for a method.");
@@ -179,26 +190,21 @@ import './Style.css';
             setMethodList((prev) => [...prev, { name: methodName, type: methodType }]);
             setMethodName('');
             setMethodType('');
-        };        
-        
-
+        };
         const addClass = () => {
             if (!className) return alert("Class name is required.");
-        
             const umlClass = new shapes.uml.Class({
                 position: { x: Math.random() * 600, y: Math.random() * 400 },
-                size: { width: 200, height: 100 },
+                size: { width: 200, height: 120 },
                 name: className,
                 attributes: attributeList.map(attr => `${attr.name}: ${attr.type}`),
                 methods: methodList.map((method) => `${method.name}(): ${method.type}`),
             });
-        
             graph.addCell(umlClass);
-            setClasses(prev => [...prev, umlClass]);
-            resetClassInputs();
-        };        
-    
-        const resetClassInputs = () => {
+            setClasses((prev) => [...prev, umlClass]);
+            resetInputs();
+        };
+        const resetInputs = () => {
             setClassName('');
             setMethodList([]);
             setAttributeList([]);
@@ -206,26 +212,27 @@ import './Style.css';
             setAttributeType('');
             setMethodName('');
             setMethodType('');
+            setSourceClassId('');
+            setSourceCardinality('');
+            setTargetClassId('');
+            setTargetCardinality('');
+            setRelationshipType('Association');
         };
         const saveEdits = () => {
             if (selectedClass) {
-                // Update the attributes and methods of the selected class
                 selectedClass.set({
                     name: className,
                     attributes: attributeList.map((attr) => `${attr.name}: ${attr.type}`),
                     methods: methodList.map((method) => `${method.name}(): ${method.type}`),
                 });
-        
-                // Rerender the text in the element (if necessary)
                 const text = `
                     <<${className}>>\n
                     ${attributeList.map((attr) => `${attr.name}: ${attr.type}`).join('\n')}\n
                     ${methodList.map((method) => `${method.name}(): ${method.type}`).join('\n')}
                 `;
                 selectedClass.attr('label/text', text);
-        
             setShowPopup(false);
-            resetClassInputs(false);
+            resetInputs(false);
         };
         }
         const updateAttribute = (index, key, value) => {
@@ -233,62 +240,53 @@ import './Style.css';
             updatedAttributes[index][key] = value;
             setAttributeList(updatedAttributes);
         };
-        
         const updateMethod = (index, key, value) => {
             const updatedMethods = [...methodList];
             updatedMethods[index][key] = value;
             setMethodList(updatedMethods);
         };
-        
-    
         const handlePopupClose = () => {
             setShowPopup(false);
-            resetClassInputs(false);
+            resetInputs(false);
         };
         const handleDeleteClick = (classToDelete) => {
             setSelectedClassToDelete(classToDelete);
-            setShowDeletePopup(true); // Show the confirmation popup
+            setShowDeletePopup(true);
         };
-    
         const confirmDelete = () => {
             if (selectedClassToDelete) {
-                // Perform the delete action
                 graph.removeCells([selectedClassToDelete]);
+                setClasses(prevClasses => 
+                    prevClasses.filter(cls => cls.id !== selectedClassToDelete.id)
+                );
             }
             setShowDeletePopup(false);
             setShowPopup(false);
-            resetClassInputs(false);
+            resetInputs(false);
             setSelectedClassToDelete(null);
-        };
+        };        
     
         const cancelDelete = () => {
-            setShowDeletePopup(false); // Close the popup without deleting
+            setShowDeletePopup(false);
             setSelectedClassToDelete(null);
         };
         const deleteAttribute = (index) => {
             setAttributeList((prev) => prev.filter((_, i) => i !== index));
         };
-        
         const deleteMethod = (index) => {
             setMethodList((prev) => prev.filter((_, i) => i !== index));
         };
-        
         const addRelationship = () => {
             if (!sourceClassId || !targetClassId) {
                 return alert("Please select both source and target classes.");
             }
-        
             const sourceClass = graph.getCell(sourceClassId);
             const targetClass = graph.getCell(targetClassId);
-        
             if (sourceClass && targetClass) {
                 const link = new shapes.standard.Link();
                 link.source(sourceClass);
                 link.target(targetClass);
-        
-                // Set the style based on the relationship type
                 setLinkStyle(link, relationshipType);
-        
                 link.appendLabel({
                     attrs: {
                         text: {
@@ -301,7 +299,6 @@ import './Style.css';
                         offset: { x: -10, y: -10 },
                     },
                 });
-        
                 link.appendLabel({
                     attrs: {
                         text: {
@@ -315,130 +312,201 @@ import './Style.css';
                     },
                 });
         
+                // Add the link to the graph
                 link.addTo(graph);
+        
+                // Create a new relationship object to track
+                const newRelationship = {
+                    id: link.id, // Use the link's unique ID
+                    source: sourceClassId,
+                    target: targetClassId,
+                    sourceCardinality: sourceCardinality || '1',
+                    targetCardinality: targetCardinality || '1',
+                    type: relationshipType,
+                };
+        
+                // Update the relationships state
+                setRelationships((prevRelationships) => [...prevRelationships, newRelationship]);
+    
+            } else {
+                alert("Source or Target class not found in the graph.");
             }
+            resetInputs();
         };
+        
         
         
 
-       const setLinkStyle = (link) => {
-        const commonStyles = {
-            stroke: 'black',
-            'stroke-width': 2,
+        const setLinkStyle = (link, relationshipType) => {
+            const styles = {
+                Association: {
+                    stroke: '#000',
+                    'stroke-width': 2,
+                    'stroke-dasharray': '0, 0',
+                    'target-marker': {
+                        type: 'path',
+                        d: 'M 10 -5 0 0 10 5 z', // Arrowhead shape
+                        fill: '#000',
+                        stroke: '#000',
+                        'stroke-width': 2,
+                    },
+                },
+                Composition: {
+                    stroke: '#4b0082',
+                    'stroke-width': 3,
+                    'stroke-dasharray': '5, 5',
+                    'target-marker': {
+                        type: 'path',
+                        d: 'M 15 -7.5 0 0 15 7.5 30 0 z',
+                        fill: '#4b0082',
+                        stroke: '#4b0082',
+                        'stroke-width': 2,
+                    },
+                },
+                Aggregation: {
+                    stroke: '#00008b',
+                    'stroke-width': 2,
+                    'stroke-dasharray': '3, 3',
+                    'target-marker': {
+                        type: 'path',
+                        d: 'M -5 -5 L 5 -5 L 5 5 L -5 5 Z',
+                        fill: '#00008b', 
+                        stroke: '#00008b',
+                        'stroke-width': 1,
+                    },
+                },
+                Dependency: {
+                    stroke: '#00008b',
+                    'stroke-width': 1.5,
+                    'stroke-dasharray': '3, 3',
+                    'target-marker': {
+                        type: 'path',
+                        d: 'M 10 -5 0 0 10 5 z',
+                        fill: '#00008b',
+                        stroke: '#00008b',
+                        'stroke-width': 1.5,
+                    },
+                },
+                Realization: {
+                    stroke: '#00008b',
+                    'stroke-width': 1.5,
+                    'stroke-dasharray': '5, 5',
+                    'target-marker': {
+                        type: 'path',
+                        d: 'M 10 -5 0 0 10 5 z',
+                        fill: 'none',
+                        stroke: '#00008b',
+                        'stroke-width': 1.5,
+                    },
+                },
+                Inheritance: {
+                            stroke: '#000', // Line color
+                            'stroke-width': 2, // Line width
+                            'stroke-dasharray': '5, 5', // Dashed line for visual distinction
+                            'target-marker': {
+                                type: 'path',
+                                d: 'M 0 -10 L 10 0 L 0 10 Z', // Hollow triangle
+                                fill: 'none', // No fill for hollow effect
+                                stroke: '#000', // Triangle border color
+                                'stroke-width': 2, // Triangle border width
+                            },
+                            text: {
+                                text: 'Herritage', // Text to display
+                                fill: '#000', // Text color
+                                'font-size': 12, // Font size
+                                'font-family': 'Arial, sans-serif', // Font family
+                            },
+                },
+
+            };
+        
+            // Apply styles based on the relationship type
+            link.attr({
+                line: styles[relationshipType] || {
+                    stroke: 'black',
+                    'stroke-width': 2, // Default style
+                },
+            });
         };
         
-        switch (relationshipType) {
-            case 'Directed Association':
-                    link.attr({
-                        line: {
-                            stroke: '#000',                  // Solid black line for association
-                            'stroke-width': 2,               // Standard line width
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead shape for directed association
-                                fill: '#000',                // Solid fill for the arrowhead
-                                stroke: '#000',              // Black stroke color to match line color
-                                'stroke-width': 2,           // Standard border width for the marker
-                            },
+        
+    const openEditPopup = (rel) => {
+        setSelectedRelationship(rel);
+        setShowPopup2(true);
+    };
+    const updateRelationship = () => {
+        if (!selectedRelationship.source || !selectedRelationship.target) {
+            return alert("Please select both source and target classes.");
+        }
+    
+        const updatedRelationships = relationships.map((rel) => {
+            if (rel.id === selectedRelationship.id) {
+                return selectedRelationship; // Update the selected relationship
+            }
+            return rel;
+        });
+    
+        // Update the link in the graph
+        const link = graph.getCell(selectedRelationship.id); // Assuming `selectedRelationship.id` corresponds to the link's ID
+    
+        if (link) {
+            const sourceClass = graph.getCell(selectedRelationship.source);
+            const targetClass = graph.getCell(selectedRelationship.target);
+    
+            if (sourceClass && targetClass) {
+                // Update the source and target of the link
+                link.source(sourceClass);
+                link.target(targetClass);
+    
+                // Update the style based on the relationship type
+                setLinkStyle(link, selectedRelationship.type);
+    
+                // Update cardinalities
+                link.label(0, {
+                    attrs: {
+                        text: {
+                            text: selectedRelationship.sourceCardinality || '1', // Default cardinality
                         },
-                    });
-                    break;
-            case 'Composition':
-                    link.attr({
-                        line: {
-                            stroke: '#4b0082', // Use a custom color for the line
-                            'stroke-width': 3, // Increase the width of the line
-                            'stroke-dasharray': '5, 5', // Dashed line for emphasis
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path
-                                fill: '#4b0082', // Solid fill to match line color
-                                stroke: '#4b0082',
-                                'stroke-width': 2, // Border of the marker
-                            },
-                        },
-                    });
-                    
-                
-                
-                break;
-            case 'Aggregation':
-                    link.attr({
-                        line: {
-                            stroke: '#00008b', // Set to a deep blue color for contrast
-                            'stroke-width': 2, // Slightly thinner line
-                            'stroke-dasharray': '3, 3', // Dashed line for visual distinction
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 15 -7.5 0 0 15 7.5 30 0 z', // Larger diamond path for better visibility
-                                fill: 'none', // No fill for a hollow effect
-                                stroke: '#00008b', // Match stroke color with the line
-                                'stroke-width': 2, // Border width for the marker
-                            },
-                        },
-                    });
-                    break;
-            case 'Dependency':
-                    link.attr({
-                        line: {
-                            stroke: '#00008b',               // Set to a deep blue color for contrast
-                            'stroke-width': 1.5,             // Thinner line for a lighter visual impact
-                            'stroke-dasharray': '3, 3',      // Dashed line to signify dependency
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 10 -5 0 0 10 5 z',     // Simple arrowhead for dependency
-                                fill: '#00008b',             // Fill to match the line color
-                                stroke: '#00008b',           // Same color as the line
-                                'stroke-width': 1.5,         // Consistent border width for the marker
-                            },
-                        },
-                    });
-                    break;
-            case 'Realization':
-                    link.attr({
-                        line: {
-                            stroke: '#00008b',               // Set to a deep blue color for contrast
-                            'stroke-width': 1.5,             // Thinner line for a lighter visual impact
-                            'stroke-dasharray': '5, 5',      // Dashed line to represent a realization
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for realization
-                                fill: 'none',                // Hollow fill to indicate an interface implementation
-                                stroke: '#00008b',           // Match stroke color with the line
-                                'stroke-width': 1.5,         // Thin border for the arrow
-                            },
-                        },
-                    });
-                    break;
-            case 'Inheritance':
-                    link.attr({
-                        line: {
-                            stroke: '#000',                  // Solid black line for inheritance
-                            'stroke-width': 2,               // Standard width for a solid line
-                            'target-marker': {
-                                type: 'path',
-                                d: 'M 10 -5 0 0 10 5 z',     // Hollow triangle path for inheritance
-                                fill: 'none',                // No fill to make the triangle hollow
-                                stroke: '#000',              // Black stroke color to match line color
-                                'stroke-width': 2,           // Standard border width for the marker
-                            },
-                        },
-                    });                             
-                    break;
-                                
-                    
-                
-            case 'Association':
-            default:
-                link.attr({
-                    line: {
-                        ...commonStyles,
-                        'target-marker': null,
                     },
                 });
-                break;
+                link.label(1, {
+                    attrs: {
+                        text: {
+                            text: selectedRelationship.targetCardinality || '1', // Default cardinality
+                        },
+                    },
+                });
+            }
         }
+    
+        // Update the relationships state
+        setRelationships(updatedRelationships);
+        resetInputs();
+        setShowPopup2(false);
     };
+        
+    
+    const deleteSelectedRelationship = () => {
+        if (!selectedRelationship) return;
+    
+        // Find and remove the relationship from the graph
+        const link = graph.getCell(selectedRelationship.id);
+        if (link) {
+            graph.removeCells([link]);
+        }
+    
+        // Update relationships state
+        setRelationships((prev) =>
+            prev.filter((rel) => rel.id !== selectedRelationship.id)
+        );
+        resetInputs();
+        setShowPopup2(false);
+    };
+    const closePopup1 = () => {
+        resetInputs();
+        setShowPopup2(false);
+        
+      };
          return (
             <>
                 <div className="toolbarContainer">
@@ -461,18 +529,17 @@ import './Style.css';
                             </div>
                         </div>
                     )}
-
             <div className='form-container'>
             <div className="cont1">
-                <div className="input-group">
-                    <input
-                        type="text"
-                        placeholder="Class Name"
-                        value={className}
-                        onChange={(e) => setClassName(e.target.value)}
-                    />
-                    <button onClick={addClass}>Add Class</button>
-                </div>
+            <div className="input-group">
+                <input
+                    type="text"
+                    placeholder="Class Name"
+                    value={className}
+                    onChange={(e) => setClassName(e.target.value)}
+                />
+                <button onClick={addClass}>Add Class</button>
+            </div>
 
                 <div className="input-group">
                     <input
@@ -543,6 +610,12 @@ import './Style.css';
                             </option>
                         ))}
                     </select>
+                    <input
+                        type="text"
+                        placeholder="Source Cardinality"
+                        value={sourceCardinality}
+                        onChange={(e) => setSourceCardinality(e.target.value)}
+                    />
                     <select onChange={(e) => setTargetClassId(e.target.value)} value={targetClassId}>
                         <option value="">Select Target Class</option>
                         {classes.map(cls => (
@@ -551,12 +624,6 @@ import './Style.css';
                             </option>
                         ))}
                     </select>
-                    <input
-                        type="text"
-                        placeholder="Source Cardinality"
-                        value={sourceCardinality}
-                        onChange={(e) => setSourceCardinality(e.target.value)}
-                    />
                     <input
                         type="text"
                         placeholder="Target Cardinality"
@@ -570,21 +637,93 @@ import './Style.css';
                         <option value="Aggregation">Aggregation</option>
                         <option value="Dependency">Dependency</option>
                         <option value="Realization">Realization</option>
-                        <option value="Directed Association">Directed Association</option>
                     </select>
                     <button onClick={addRelationship}>Add Relationship</button>
-                
+
+                    <div className="relationship-list">
+    <h3>Relationships</h3>
+    {relationships.map((rel, index) => {
+        const sourceClass = classes.find(cls => cls.id === rel.source);
+        const targetClass = classes.find(cls => cls.id === rel.target);
+
+        if (sourceClass?.attributes.name && targetClass?.attributes.name) {
+            return (
+                <div
+                    key={index}
+                    className="relationship-item"
+                    onClick={() => openEditPopup(rel)}
+                >
+                    <span>
+                        {`${sourceClass.attributes.name} -> ${targetClass.attributes.name}`}
+                    </span>
                 </div>
+            );
+        }
+        return null;
+    })}
+</div>
+                </div>
+                {showPopup2 && (
+                    <div className="popup">
+                        <div className="popup-content">
+                        <h3>Edit Relationship</h3>
+                        <select onChange={(e) => setSelectedRelationship({ ...selectedRelationship, source: e.target.value })} value={selectedRelationship.source}>
+                            <option value="">Select Source Class</option>
+                            {classes.map(cls => (
+                                <option key={cls.id} value={cls.id}>
+                                    {cls.attributes.name}
+                                </option>
+                            ))}
+                        </select>
+                        <select onChange={(e) => setSelectedRelationship({ ...selectedRelationship, target: e.target.value })} value={selectedRelationship.target}>
+                            <option value="" disa>Select Target Class</option>
+                            {classes.map(cls => (
+                                <option key={cls.id} value={cls.id}>
+                                    {cls.attributes.name}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            placeholder="Source Cardinality"
+                            value={selectedRelationship.sourceCardinality}
+                            onChange={(e) => setSelectedRelationship({
+                                ...selectedRelationship,
+                                sourceCardinality: e.target.value,
+                            })}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Target Cardinality"
+                            value={selectedRelationship.targetCardinality}
+                            onChange={(e) => setSelectedRelationship({
+                                ...selectedRelationship,
+                                targetCardinality: e.target.value,
+                            })}
+                        />
+                        <select onChange={(e) => setSelectedRelationship({ ...selectedRelationship, type: e.target.value })} value={selectedRelationship.type}>
+                            <option value="Association">Association</option>
+                            <option value="Inheritance">Inheritance</option>
+                            <option value="Composition">Composition</option>
+                            <option value="Aggregation">Aggregation</option>
+                            <option value="Dependency">Dependency</option>
+                            <option value="Realization">Realization</option>
+                        </select>
+                        <button onClick={updateRelationship}>Save</button>
+                        <button className='delete' onClick={deleteSelectedRelationship}>Delete</button>
+                        <button onClick={closePopup1}>Cancel</button>
+                    </div>
+                    </div>
+                )}
             </div>
             <div className="canvas-container">
-            <div className="canvas-title">UML Diagram Canvas</div>
             <div id="canvas" style={{ height: '100%', width: '100%' }}>
             </div>
         </div>
         {showPopup && (
                 <div className="popup">
                     <div className="popup-content">
-                    <button id="delete" onClick={() => handleDeleteClick(selectedClass)}>
+                    <button className="delete" onClick={() => handleDeleteClick(selectedClass)}>
                     Delete
                 </button>
                 {showDeletePopup && (
@@ -594,7 +733,7 @@ import './Style.css';
                         <p>Are you sure you want to delete this class?</p>
                         <div className="popup-footer">
                             <button onClick={confirmDelete} className="confirm-button">
-                                Yes, Delete
+                                Yes
                             </button>
                             <button onClick={cancelDelete} className="cancel-button">
                                 Cancel
