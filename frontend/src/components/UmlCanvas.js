@@ -109,66 +109,187 @@ import './Style.css';
           };
           
           
-          
-          const onGenerateCode = (language) => {
-            const classes = fetchDataFromPaper();
+          const exportGraphAsImage = () => {
+            const svgElement = document.querySelector('svg'); // Replace with your graph container selector
+        
+            if (!svgElement) {
+                alert('No graph found to export.');
+                return;
+            }
+        
+            // Get bounding box dimensions of the entire SVG
+            const { x, y, width, height } = svgElement.getBBox();
+        
+            // Clone the SVG and set viewBox and size to fit the graph content
+            const clonedSvg = svgElement.cloneNode(true);
+            clonedSvg.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
+            clonedSvg.setAttribute('width', width);
+            clonedSvg.setAttribute('height', height);
+        
+            // Serialize the SVG into XML
+            const svgData = new XMLSerializer().serializeToString(clonedSvg);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+        
+            const img = new Image();
+            img.onload = () => {
+                // Create a canvas with the graph dimensions
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+        
+                const ctx = canvas.getContext('2d');
+        
+                // Add a white background
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, width, height);
+        
+                // Draw the SVG onto the canvas
+                ctx.drawImage(img, 0, 0);
+        
+                // Convert the canvas to a PNG and download
+                const pngUrl = canvas.toDataURL('image/png');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = pngUrl;
+                downloadLink.download = 'graph.png';
+                downloadLink.click();
+        
+                // Clean up
+                URL.revokeObjectURL(url);
+            };
+        
+            img.onerror = (error) => {
+                console.error('Error loading the SVG image:', error);
+                alert('Failed to export graph.');
+            };
+        
+            img.src = url; // Load the cloned SVG
+        };
+        
+        const onGenerateCode = (language) => {
+            const classes = fetchDataFromPaper();  // Fetch class data
         
             if (!classes.length) {
                 alert('No classes found to generate code.');
                 return;
             }
+        
+            const idToClassNameMap = {};
             const relationshipMap = {};
-            classes.forEach(({ className, relationships }) => {
-                if (relationships) {
-                    relationships.forEach((relation) => {
-                        if (relation.type === 'inheritance') {
-                            relationshipMap[relation.child] = relation.parent;
-                        }
-                    });
+        
+            // Step 1: Build the map of class IDs to class names
+            classes.forEach(({ className, id }) => {
+                idToClassNameMap[id] = className;  // Map class IDs to class names
+            });
+        
+            // Step 2: Build the relationship map
+            relationships.forEach((relationship) => {
+                if (relationship.type === 'Inheritance') {
+                    relationshipMap[relationship.target] = relationship.source; // target inherits from source
                 }
             });
         
             let code = '';
         
-            classes.forEach(({ className, attributes, methods }) => {
-                const inheritsFrom = relationshipMap[className];
-                const inherits = inheritsFrom ? (language === 'Python' ? `(${inheritsFrom})` : ` extends ${inheritsFrom}`) : '';
+            // Step 3: Generate code for each class
+            classes.forEach(({ className, id, attributes, methods }) => {
+                const inheritsFromId = relationshipMap[id];  // Check if the class inherits from another by ID
+                const inherits = inheritsFromId ? (language === 'Python' ? `(${idToClassNameMap[inheritsFromId]})` : ` extends ${idToClassNameMap[inheritsFromId]}`) : '';
+        
+                // Start code generation based on the selected language
                 if (language === 'Java') {
                     code += `public class ${className}${inherits} {\n`;
+        
+                    // Add attributes for the class
                     attributes.forEach((attr) => {
                         code += `    private ${attr.type} ${attr.name};\n`;
                     });
+        
                     code += '\n';
+        
+                    // Add methods for the class
                     methods.forEach((method) => {
                         code += `    public ${method.type} ${method.name}() {\n        // TODO: Implement\n    }\n`;
                     });
+        
                     code += '}\n\n';
                 } else if (language === 'PHP') {
-                    code += `<?php\n\nclass ${className}${inherits ? ` extends ${inheritsFrom}` : ''} {\n`;
+                    code += `<?php\n\nclass ${className}${inherits ? ` extends ${idToClassNameMap[inheritsFromId]}` : ''} {\n`;
+        
+                    // Add attributes for the class
                     attributes.forEach((attr) => {
                         code += `    private $${attr.name}; // Type: ${attr.type}\n`;
                     });
+        
                     code += '\n';
+        
+                    // Add methods for the class
                     methods.forEach((method) => {
                         code += `    public function ${method.name}() {\n        // TODO: Implement\n    }\n`;
                     });
+        
                     code += '}\n?>\n';
                 } else if (language === 'Python') {
                     code += `class ${className}${inherits}:\n`;
                     code += '    def __init__(self):\n';
+        
+                    // Add attributes for the class
                     attributes.forEach((attr) => {
                         code += `        self.${attr.name} = None  # Type: ${attr.type}\n`;
                     });
+        
                     code += '\n';
+        
+                    // Add methods for the class
                     methods.forEach((method) => {
                         code += `    def ${method.name}(self):\n        # TODO: Implement\n        pass\n`;
                     });
+        
                     code += '\n\n';
                 }
             });
+        
             setGeneratedCode(code.trim());
-            setShowPopup1(true);
+            setShowPopup1(true);  // Show the popup with generated code
         };
+        
+        
+        
+        
+        
+        
+        
+        
+        const exportGeneratedCode = (codeContent) => {
+            if (!codeContent) {
+                alert("No code to export!");
+                return;
+            }
+        
+            let fileName = "GeneratedCode";
+            let fileExtension = "txt"; // Default
+        
+            // Determine file extension based on detected language keywords
+            if (codeContent.includes("public class")) {
+                fileExtension = "java";
+            } else if (codeContent.includes("<?php")) {
+                fileExtension = "php";
+            } else if (codeContent.includes("class") && codeContent.includes("def")) {
+                fileExtension = "py";
+            }
+        
+            // Create a downloadable file
+            const blob = new Blob([codeContent], { type: 'text/plain;charset=utf-8' });
+            const downloadLink = document.createElement('a');
+            downloadLink.href = URL.createObjectURL(blob);
+            downloadLink.download = `${fileName}.${fileExtension}`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(downloadLink.href);
+        };
+                    
+        
         const closePopup = () => {
             setShowPopup1(false);
             setGeneratedCode('');
@@ -282,11 +403,14 @@ import './Style.css';
             }
             const sourceClass = graph.getCell(sourceClassId);
             const targetClass = graph.getCell(targetClassId);
+        
             if (sourceClass && targetClass) {
                 const link = new shapes.standard.Link();
                 link.source(sourceClass);
                 link.target(targetClass);
                 setLinkStyle(link, relationshipType);
+        
+                // Append labels for cardinality
                 link.appendLabel({
                     attrs: {
                         text: {
@@ -299,6 +423,7 @@ import './Style.css';
                         offset: { x: -10, y: -10 },
                     },
                 });
+        
                 link.appendLabel({
                     attrs: {
                         text: {
@@ -317,7 +442,7 @@ import './Style.css';
         
                 // Create a new relationship object to track
                 const newRelationship = {
-                    id: link.id, // Use the link's unique ID
+                    id: link.id,
                     source: sourceClassId,
                     target: targetClassId,
                     sourceCardinality: sourceCardinality || '1',
@@ -327,12 +452,14 @@ import './Style.css';
         
                 // Update the relationships state
                 setRelationships((prevRelationships) => [...prevRelationships, newRelationship]);
-    
             } else {
                 alert("Source or Target class not found in the graph.");
             }
+        
             resetInputs();
         };
+        
+        
         
         
         
@@ -519,16 +646,33 @@ import './Style.css';
                     <button className="toolBtn" onClick={() => onGenerateCode('Python')}>
                         Generate Python Code
                     </button>
+                    <button className="export-button" onClick={() => exportGraphAsImage(paper.el)}>Export Graph</button>
                     </div>
                     {showPopup1 && (
                         <div className="popup1">
                             <div className="popup-content1">
                                 <h3>Generated Code</h3>
                                 <pre className="code-preview">{generatedCode}</pre>
-                                <button className="close-button" onClick={closePopup}>Close</button>
+
+                                {/* Button Container */}
+                                <div className="button-container">
+                                    <button 
+                                        className="export-button" 
+                                        onClick={() => exportGeneratedCode(generatedCode)}>
+                                        Export Code
+                                    </button>
+                                    
+                                    <button 
+                                        className="close-button" 
+                                        onClick={closePopup}>
+                                        Close
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
+
+
             <div className='form-container'>
             <div className="cont1">
             <div className="input-group">
