@@ -112,8 +112,17 @@ import './Style.css';
           const exportGraphAsImage = () => {
             const svgElement = document.querySelector('svg'); // Replace with your graph container selector
         
+            // Check if the SVG element exists
             if (!svgElement) {
                 alert('No graph found to export.');
+                return;
+            }
+        
+            // Check if the graph contains any elements
+            const graphElements = graph.getCells(); // Replace with your actual method to get graph elements
+            const hasClasses = graphElements.some(cell => cell.isElement && cell.attributes.type === 'uml.Class'); // Adjust type if needed
+            if (!hasClasses) {
+                alert('No classes found on the graph to export.');
                 return;
             }
         
@@ -165,6 +174,7 @@ import './Style.css';
         
             img.src = url; // Load the cloned SVG
         };
+        
         
         const onGenerateCode = (language) => {
             const classes = fetchDataFromPaper();  // Fetch class data
@@ -314,6 +324,9 @@ import './Style.css';
         };
         const addClass = () => {
             if (!className) return alert("Class name is required.");
+            if (classes.some((cls) => cls.attributes.name === className)) {
+                return alert("Class name must be unique.");
+            }            
             const umlClass = new shapes.uml.Class({
                 position: { x: Math.random() * 600, y: Math.random() * 400 },
                 size: { width: 200, height: 120 },
@@ -653,8 +666,6 @@ import './Style.css';
                             <div className="popup-content1">
                                 <h3>Generated Code</h3>
                                 <pre className="code-preview">{generatedCode}</pre>
-
-                                {/* Button Container */}
                                 <div className="button-container">
                                     <button 
                                         className="export-button" 
