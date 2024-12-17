@@ -421,6 +421,8 @@ import './Style.css';
                 const link = new shapes.standard.Link();
                 link.source(sourceClass);
                 link.target(targetClass);
+        
+                // Set the style based on the relationship type
                 setLinkStyle(link, relationshipType);
         
                 // Append labels for cardinality
@@ -649,7 +651,9 @@ import './Style.css';
       };
          return (
             <>
+            
                 <div className="toolbarContainer">
+                    
                     <button className="toolBtn" onClick={() => onGenerateCode('Java')}>
                         Generate Java Code
                     </button>
@@ -872,6 +876,7 @@ import './Style.css';
                 )}
             </div>
             <div className="canvas-container">
+            <div className="canvas-title">UML Diagram Canvas</div>
             <div id="canvas" style={{ height: '100%', width: '100%' }}>
             </div>
         </div>
