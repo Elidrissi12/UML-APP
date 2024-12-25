@@ -44,9 +44,10 @@
     margin-left: 30px;
 }
 .toolbarContainer{
-    position: absolute;
-    top: 5px;
-    left: 25%;
+    display: flex;
+    justify-content: flex-start;
+    top: 2px;
+    left: 10px;
     display: flex;
     padding: 10px;
     background-color: #f4f4f4;
@@ -66,6 +67,13 @@
 }
 .toolBtn:hover {
     background-color: #0056b3;
+}
+.img{
+    display: flex;
+    width: 200px;
+    height: auto;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 .popup {
     position: absolute;

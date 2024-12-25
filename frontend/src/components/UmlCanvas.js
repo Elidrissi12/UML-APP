@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {dia, shapes } from 'jointjs';
 import './Style.css';
+import emsiImage from './emsi.png';
     const UmlCanvas = () => {
         const [selectedClass, setSelectedClass] = useState(null); // For editing/deleting
         const [graph, setGraph] = useState(null);
@@ -88,41 +89,25 @@ import './Style.css';
             const paddedY = y - padding;
             const paddedWidth = width + 2 * padding;
             const paddedHeight = height + 2 * padding;
-        
-            // Clone the SVG and set viewBox and size to fit the graph content with padding
             const clonedSvg = svgElement.cloneNode(true);
-        
-            // Set the new viewBox and size for the cloned SVG with padding
             clonedSvg.setAttribute('viewBox', `${paddedX} ${paddedY} ${paddedWidth} ${paddedHeight}`);
             clonedSvg.setAttribute('width', paddedWidth);
             clonedSvg.setAttribute('height', paddedHeight);
-        
-            // Serialize the SVG into XML
             const svgData = new XMLSerializer().serializeToString(clonedSvg);
             const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(svgBlob);
         
             const img = new Image();
             img.onload = () => {
-                // Create a canvas with the padded width and height
                 const canvas = document.createElement('canvas');
                 canvas.width = paddedWidth;
                 canvas.height = paddedHeight;
-        
                 const ctx = canvas.getContext('2d');
-        
-                // Add a white background to the canvas
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, paddedWidth, paddedHeight);
-        
-                // Calculate the offset to center the image on the canvas (ensure padding is applied)
                 const offsetX = (paddedWidth - width) / 2;
                 const offsetY = (paddedHeight - height) / 2;
-        
-                // Draw the SVG image onto the canvas, ensuring it's centered and has padding
                 ctx.drawImage(img, offsetX, offsetY);
-        
-                // Convert the canvas to a PNG and download it
                 const pngUrl = canvas.toDataURL('image/png');
                 const downloadLink = document.createElement('a');
                 downloadLink.href = pngUrl;
@@ -597,9 +582,8 @@ import './Style.css';
       };
          return (
             <>
-            
                 <div className="toolbarContainer">
-                    
+                <img src={emsiImage} alt="EMSI Logo" className='img'/>  
                     <button className="toolBtn" onClick={() => onGenerateCode('Java')}>
                         Generate Java Code
                     </button>
@@ -611,7 +595,8 @@ import './Style.css';
                     </button>
 
                     <button className="export-button" onClick={() => exportGraphAsImage(paper.el)}>Export Graph</button>
-                    </div>
+                </div>
+
                     {showPopup1 && (
                         <div className="popup1">
                             <div className="popup-content1">
@@ -633,8 +618,6 @@ import './Style.css';
                             </div>
                         </div>
                     )}
-
-
             <div className='form-container'>
             <div className="cont1">
             <div className="input-group">
@@ -646,7 +629,6 @@ import './Style.css';
                 />
                 <button onClick={addClass}>Add Class</button>
             </div>
-
                 <div className="input-group">
                     <input
                         type="text"
@@ -747,27 +729,27 @@ import './Style.css';
                     <button onClick={addRelationship}>Add Relationship</button>
 
                     <div className="relationship-list">
-    <h3>Relationships</h3>
-    {relationships.map((rel, index) => {
-        const sourceClass = classes.find(cls => cls.id === rel.source);
-        const targetClass = classes.find(cls => cls.id === rel.target);
+                        <h3>Relationships</h3>
+                        {relationships.map((rel, index) => {
+                            const sourceClass = classes.find(cls => cls.id === rel.source);
+                            const targetClass = classes.find(cls => cls.id === rel.target);
 
-        if (sourceClass?.attributes.name && targetClass?.attributes.name) {
-            return (
-                <div
-                    key={index}
-                    className="relationship-item"
-                    onClick={() => openEditPopup(rel)}
-                >
-                    <span>
-                        {`${sourceClass.attributes.name} -> ${targetClass.attributes.name}`}
-                    </span>
-                </div>
-            );
-        }
-        return null;
-    })}
-</div>
+                            if (sourceClass?.attributes.name && targetClass?.attributes.name) {
+                                return (
+                                    <div
+                                        key={index}
+                                        className="relationship-item"
+                                        onClick={() => openEditPopup(rel)}
+                                    >
+                                        <span>
+                                            {`${sourceClass.attributes.name} -> ${targetClass.attributes.name}`}
+                                        </span>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })}
+                    </div>
                 </div>
                 {showPopup2 && (
                     <div className="popup">

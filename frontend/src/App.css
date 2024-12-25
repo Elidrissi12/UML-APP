@@ -9,14 +9,13 @@ body {
   align-items: center;
   min-height: 100vh;
 }
-
 .App {
   text-align: center;
 }
 .toolbarContainer{
   position: absolute;
   top: 5px;
-  left: 25%;
+  left: 15%;
   display: flex;
   padding: 10px;
   background-color: #f4f4f4;
